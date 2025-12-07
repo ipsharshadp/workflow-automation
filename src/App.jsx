@@ -52,7 +52,7 @@ export default function App() {
 
       <aside className="right-column">
         <ActionPickerDrawer />
-        <AppPickerDrawer />
+
         <DrawerAppSelector />
         <ToolsDrawer />
         <NodeEditor />

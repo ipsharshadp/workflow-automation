@@ -1,3 +1,4 @@
+// src/store/useFlowsStore.js
 import { create } from "zustand";
 import { nanoid } from "nanoid";
 
@@ -12,10 +13,10 @@ const createDefaultFlow = () => ({
       id: "n-" + nanoid(),
       type: "customPill",
       position: { x: 220, y: 180 },
-      data: { label: "Select an app", meta: { isTrigger: true } }
-    }
+      data: { label: "Select an app", meta: { isTrigger: true } },
+    },
   ],
-  createdAt: Date.now()
+  createdAt: Date.now(),
 });
 
 /* -------------------- STORAGE HELPERS -------------------- */
@@ -69,7 +70,7 @@ const useFlowsStore = create((set, get) => ({
 
     set({
       flows,
-      currentFlowId: flows[0].id
+      currentFlowId: flows[0].id,
     });
   },
 
@@ -138,7 +139,7 @@ const useFlowsStore = create((set, get) => ({
           return {
             ...el,
             data: { ...el.data, ...(patch.data || {}) },
-            position: patch.position ? patch.position : el.position
+            position: patch.position ? patch.position : el.position,
           };
         });
 
@@ -166,12 +167,12 @@ const useFlowsStore = create((set, get) => ({
               ...el.data,
               label: app.name,
               meta: {
-                ...(el.data.meta || {}),
+                ...(el.data?.meta || {}),
                 app: app.id,
                 appName: app.name,
-                kind: app.type
-              }
-            }
+                kind: app.type,
+              },
+            },
           };
         });
 
@@ -185,14 +186,22 @@ const useFlowsStore = create((set, get) => ({
 
   /* -------------------- SET NODES (Used by ReactFlow) -------------------- */
 
-  setNodes: (nodes) => {
+  setNodes: (incoming) => {
     const { currentFlowId, flows } = get();
 
     const updatedFlows = flows.map((f) => {
       if (f.id !== currentFlowId) return f;
 
+      const prevNodes = f.elements.filter((e) => e.data); // existing nodes
       const edges = f.elements.filter((e) => e.source && e.target);
-      return { ...f, elements: [...nodes, ...edges] };
+
+      // Incoming can be array OR function
+      const nextNodes =
+        typeof incoming === "function"
+          ? incoming(prevNodes)
+          : incoming;
+
+      return { ...f, elements: [...nextNodes, ...edges] };
     });
 
     saveAll(updatedFlows);
@@ -201,14 +210,21 @@ const useFlowsStore = create((set, get) => ({
 
   /* -------------------- SET EDGES (Used by ReactFlow) -------------------- */
 
-  setEdges: (edges) => {
+  setEdges: (incoming) => {
     const { currentFlowId, flows } = get();
 
     const updatedFlows = flows.map((f) => {
       if (f.id !== currentFlowId) return f;
 
+      const prevEdges = f.elements.filter((e) => e.source && e.target);
       const nodes = f.elements.filter((e) => e.data);
-      return { ...f, elements: [...nodes, ...edges] };
+
+      const nextEdges =
+        typeof incoming === "function"
+          ? incoming(prevEdges)
+          : incoming;
+
+      return { ...f, elements: [...nodes, ...nextEdges] };
     });
 
     saveAll(updatedFlows);
@@ -222,7 +238,7 @@ const useFlowsStore = create((set, get) => ({
     if (!cur) return;
 
     const blob = new Blob([JSON.stringify(cur, null, 2)], {
-      type: "application/json"
+      type: "application/json",
     });
 
     const a = document.createElement("a");
@@ -263,7 +279,7 @@ const useFlowsStore = create((set, get) => ({
 
   addLog: (line) =>
     set((state) => ({
-      logs: [...state.logs, `${new Date().toLocaleTimeString()} - ${line}`]
+      logs: [...state.logs, `${new Date().toLocaleTimeString()} - ${line}`],
     })),
 
   /* -------------------- CLEAR ALL -------------------- */
@@ -273,12 +289,13 @@ const useFlowsStore = create((set, get) => ({
     const fresh = createDefaultFlow();
     set({ flows: [fresh], currentFlowId: fresh.id, logs: [] });
   },
+
   setNodeConditionsById: (nodeId, conditions) => {
-    set(state => {
-      const flows = state.flows.map(f => {
+    set((state) => {
+      const flows = state.flows.map((f) => {
         if (f.id !== state.currentFlowId) return f;
 
-        const elements = f.elements.map(el => {
+        const elements = f.elements.map((el) => {
           if (el.id !== nodeId) return el;
 
           return {
@@ -286,10 +303,10 @@ const useFlowsStore = create((set, get) => ({
             data: {
               ...el.data,
               meta: {
-                ...el.data.meta,
-                conditions
-              }
-            }
+                ...el.data?.meta,
+                conditions,
+              },
+            },
           };
         });
 
@@ -300,19 +317,23 @@ const useFlowsStore = create((set, get) => ({
       return { flows };
     });
   },
+
   createToolNodeAfter: (nodeId, tool) => {
     const { flows, currentFlowId } = get();
-    const flow = flows.find(f => f.id === currentFlowId);
+    const flow = flows.find((f) => f.id === currentFlowId);
     if (!flow) return;
 
-    const parent = flow.elements.find(n => n.id === nodeId);
+    const parent = flow.elements.find((n) => n.id === nodeId);
     if (!parent) return;
+
+    // If parent has no position, set default x/y
+    const parentPos = parent.position || { x: 0, y: 0 };
 
     const newNode = {
       id: "n-" + nanoid(),
       type: `tool_${tool.type}`,
-      position: { x: parent.position.x + 240, y: parent.position.y },
-      data: { label: tool.name, meta: { tool: tool.id } }
+      position: { x: parentPos.x + 240, y: parentPos.y },
+      data: { label: tool.name, meta: { tool: tool.id } },
     };
 
     const newEdge = {
