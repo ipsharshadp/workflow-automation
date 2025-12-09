@@ -1,15 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Handle, Position } from "reactflow";
 import { FiPlus, FiTrash2, FiSettings } from "react-icons/fi";
 
 export default function PillNode({ id, data }) {
     const [hover, setHover] = useState(false);
+
     const meta = data?.meta || {};
     const isTrigger = meta.type === "trigger" || id.includes("trigger");
     const isFirstNode = meta.isFirstNode || false;
-    console.log("isTrigger", isTrigger)
-    console.log("id", id)
-    console.log("meta", data)
+
+
+
     return (
         <div
             className="pill-node"
@@ -25,20 +26,17 @@ export default function PillNode({ id, data }) {
             )}
 
             {/* Main pill container */}
-            <div className="pill-container">
+            <div className="pill-container" onClick={(e) => {
+                e.stopPropagation();
+                console.log("click open app pill-left", id)
+                window.dispatchEvent(
+                    new CustomEvent("wpaf:open-action-picker", {
+                        detail: { action: "open-app-picker", nodeId: id },
+                    })
+                );
+            }}>
                 {/* Left icon */}
-                <div
-                    className="pill-left"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        console.log("click open app pill-left", id)
-                        window.dispatchEvent(
-                            new CustomEvent("wpaf:open-action-picker", {
-                                detail: { action: "open-app-picker", nodeId: id },
-                            })
-                        );
-                    }}
-                >
+                <div className="pill-left">
                     <FiPlus size={22} />
                 </div>
 
@@ -121,6 +119,8 @@ export default function PillNode({ id, data }) {
                     <FiTrash2 size={18} />
                 </div>
             )}
+
+
         </div>
     );
 }

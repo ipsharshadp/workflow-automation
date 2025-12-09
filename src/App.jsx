@@ -1,29 +1,34 @@
 import React, { useEffect, useState } from 'react'
-import FlowList from './components/FlowList'
 import SidebarApps from './components/SidebarApps'
 import CanvasArea from './components/CanvasArea'
-import DrawerAppSelector from './components/DrawerAppSelector'
-import NodeEditor from './components/NodeEditor'
-import LogsPanel from './components/LogsPanel'
-import ToolsDrawer from "./components/ToolsDrawer";
-import AppPickerDrawer from "./components/AppPickerDrawer";
 import useFlowsStore from './store/useFlowsStore'
-import ActionPickerDrawer from "./components/ActionPickerDrawer";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
+import ActionPickerModal from './components/modal/ActionPickerModal';
+
 
 
 export default function App() {
   const init = useFlowsStore(s => s.init)
-
   const [ready, setReady] = useState(false);
+  const [show, setShow] = useState(false);
+  const [nodeId, setNodeId] = useState(null);
 
   useEffect(() => {
     init();              // Load flows
     setReady(true);      // Ensure children mount AFTER init
+  }, []);
+  useEffect(() => {
+    const openModal = (e) => {
+      setNodeId(e.detail.nodeId);
+      setShow(true);
+    };
+
+    window.addEventListener("wpaf:open-action-picker", openModal);
+    return () => window.removeEventListener("wpaf:open-action-picker", openModal);
   }, []);
 
   if (!ready) return <div>Loading…</div>;
@@ -58,6 +63,12 @@ export default function App() {
 
         </Col>
       </Row>
+      <ActionPickerModal
+        show={show}
+        onHide={() => setShow(false)}
+        nodeId={nodeId}
+      />
+
     </Container>
   )
 }

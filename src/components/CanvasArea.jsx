@@ -184,7 +184,7 @@ export default function CanvasArea() {
         onDragOver={onDragOver}
         fitView
       >
-        <Controls />
+        <Controls className="Controls" />
         <Background />
       </ReactFlow>
     </div>

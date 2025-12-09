@@ -155,6 +155,7 @@ const useFlowsStore = create((set, get) => ({
 
   setNodeAppById: (nodeId, app) => {
     set((state) => {
+      console.log("setNodeAppById", nodeId, app);
       const flows = state.flows.map((f) => {
         if (f.id !== state.currentFlowId) return f;
 
