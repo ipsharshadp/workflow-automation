@@ -172,7 +172,7 @@ export default function CanvasArea() {
   if (!flow) return <div>No flow selected</div>;
 
   return (
-    <div className="canvas-wrap" ref={reactFlowWrapper} style={{ height: "100%" }}>
+    <div className="canvas-wrap" ref={reactFlowWrapper} >
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -185,7 +185,7 @@ export default function CanvasArea() {
         fitView
       >
         <Controls />
-        <Background gap={16} />
+        <Background />
       </ReactFlow>
     </div>
   );

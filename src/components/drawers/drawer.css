@@ -1,0 +1,88 @@
+/* Drawer Backdrop */
+.drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 1990;
+    cursor: pointer;
+}
+
+/* Drawer Panel */
+.drawer-panel {
+    position: fixed;
+    right: -380px;
+    /* Hidden position */
+    top: 0;
+    height: 100vh;
+    width: 380px;
+    background: #fff;
+    border-left: 1px solid #e5e5e5;
+    transition: right 0.3s ease;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+}
+
+.drawer-panel.open {
+    right: 0;
+}
+
+/* Drawer Header */
+.drawer-header {
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.drawer-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.drawer-close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    padding: 6px;
+    cursor: pointer;
+}
+
+/* Drawer Content */
+.drawer-content {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Picker List */
+.picker-section h4 {
+    margin: 0 0 10px;
+}
+
+.picker-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.picker-item {
+    background: #f7f7f7;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.picker-item:hover {
+    background: #ececec;
+}
+
+.picker-item:active {
+    background: #e5e5e5;
+}

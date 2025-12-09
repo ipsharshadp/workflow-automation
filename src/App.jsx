@@ -9,6 +9,12 @@ import ToolsDrawer from "./components/ToolsDrawer";
 import AppPickerDrawer from "./components/AppPickerDrawer";
 import useFlowsStore from './store/useFlowsStore'
 import ActionPickerDrawer from "./components/ActionPickerDrawer";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Button from 'react-bootstrap/Button';
+
 
 export default function App() {
   const init = useFlowsStore(s => s.init)
@@ -23,41 +29,35 @@ export default function App() {
   if (!ready) return <div>Loading…</div>;
 
   return (
-    <div className="wpaf-app-root">
-      <aside className="left-column">
-        <div className="top-logo">Bit-like Flows</div>
-        <FlowList />
-        <SidebarApps />
-      </aside>
+    <Container fluid>
+      <Row>
+        <Col xs={3} className='p-0'>
+          <Row>
+            <Col xs={12}>
+              {/* <FlowList /> */}
+              <SidebarApps />
+            </Col>
+          </Row>
 
-      <section className="center-column">
-        <div className="topbar">
-          <div className="flow-controls">
-            <button onClick={() => useFlowsStore.getState().createFlow()}>+ New Flow</button>
-            <button onClick={() => useFlowsStore.getState().cloneFlow()}>Clone Flow</button>
-            <button onClick={() => useFlowsStore.getState().exportFlow()}>Export</button>
-            <label className="import-btn">
-              Import
-              <input type="file" accept="application/json" onChange={(e) => useFlowsStore.getState().importFlowFile(e)} />
-            </label>
-          </div>
-          <div className="right-actions">
-            <button onClick={() => useFlowsStore.getState().saveCurrentFlow()}>Save</button>
-            <button onClick={() => useFlowsStore.getState().runCurrentFlow()}>Test Flow Once</button>
-          </div>
-        </div>
+        </Col>
 
-        <CanvasArea />
-      </section>
+        <Col xs={9}>
+          <Row>
+            <Col xs={12} className='mt-5'>
+              <Button className='float-start' variant="outline-primary" onClick={() => useFlowsStore.getState().createFlow()}>+ New Flow</Button>
+              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().cloneFlow()}>Clone Flow</Button>
+              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().exportFlow()}>Export</Button>
+              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().importFlowFile()}>Import</Button>
+              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().saveCurrentFlow()}>Save</Button>
+              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().runCurrentFlow()}>Test Flow Once</Button>
+            </Col>
+            <Col xs={12}>
+              <CanvasArea />
+            </Col>
+          </Row>
 
-      <aside className="right-column">
-        <ActionPickerDrawer />
-
-        <DrawerAppSelector />
-        <ToolsDrawer />
-        <NodeEditor />
-
-      </aside>
-    </div>
+        </Col>
+      </Row>
+    </Container>
   )
 }

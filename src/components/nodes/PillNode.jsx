@@ -6,7 +6,10 @@ export default function PillNode({ id, data }) {
     const [hover, setHover] = useState(false);
     const meta = data?.meta || {};
     const isTrigger = meta.type === "trigger" || id.includes("trigger");
-
+    const isFirstNode = meta.isFirstNode || false;
+    console.log("isTrigger", isTrigger)
+    console.log("id", id)
+    console.log("meta", data)
     return (
         <div
             className="pill-node"
@@ -71,7 +74,7 @@ export default function PillNode({ id, data }) {
             </div>
 
             {/* Hover Toolbar */}
-            {hover && (
+            {/* {hover && (
                 <div className="pill-toolbar">
                     <div
                         className="pill-tool-btn"
@@ -102,20 +105,22 @@ export default function PillNode({ id, data }) {
                         <FiPlus size={16} />
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* Delete Button */}
-            <div
-                className="pill-delete"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    window.dispatchEvent(
-                        new CustomEvent("wpaf:delete-node", { detail: { id } })
-                    );
-                }}
-            >
-                <FiTrash2 size={18} />
-            </div>
+            {!isFirstNode && (
+                <div
+                    className="pill-delete"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        window.dispatchEvent(
+                            new CustomEvent("wpaf:delete-node", { detail: { id } })
+                        );
+                    }}
+                >
+                    <FiTrash2 size={18} />
+                </div>
+            )}
         </div>
     );
 }
