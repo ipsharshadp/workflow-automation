@@ -187,49 +187,91 @@ const useFlowsStore = create((set, get) => ({
 
   /* -------------------- SET NODES (Used by ReactFlow) -------------------- */
 
+  // setNodes: (incoming) => {
+  //   console.log("setNodes", incoming);
+  //   const { currentFlowId, flows } = get();
+  //   console.log("currentFlowId", currentFlowId);
+  //   console.log("flows", flows);
+  //   const updatedFlows = flows.map((f) => {
+  //     if (f.id !== currentFlowId) return f;
+  //     console.log("f", f);
+
+  //     const prevNodes = f.elements.filter((e) => e.data); // existing nodes
+  //     const edges = f.elements.filter((e) => e.source && e.target);
+  //     console.log("prevNodes", prevNodes);
+  //     console.log("edges", edges);
+  //     // Incoming can be array OR function
+  //     const nextNodes =
+  //       typeof incoming === "function"
+  //         ? incoming(prevNodes)
+  //         : incoming;
+
+  //     return { ...f, elements: [...nextNodes, ...edges] };
+  //   });
+
+  //   saveAll(updatedFlows);
+  //   set({ flows: updatedFlows });
+  // },
+
   setNodes: (incoming) => {
     const { currentFlowId, flows } = get();
 
-    const updatedFlows = flows.map((f) => {
+    const updated = flows.map(f => {
       if (f.id !== currentFlowId) return f;
 
-      const prevNodes = f.elements.filter((e) => e.data); // existing nodes
-      const edges = f.elements.filter((e) => e.source && e.target);
+      const nodes = typeof incoming === "function"
+        ? incoming(f.elements.filter(e => e.data))
+        : incoming;
 
-      // Incoming can be array OR function
-      const nextNodes =
-        typeof incoming === "function"
-          ? incoming(prevNodes)
-          : incoming;
+      const edges = f.elements.filter(e => e.source && e.target);
 
-      return { ...f, elements: [...nextNodes, ...edges] };
+      return { ...f, elements: [...nodes, ...edges] };
     });
 
-    saveAll(updatedFlows);
-    set({ flows: updatedFlows });
+    set({ flows: updated });
+    saveAll(updated);
   },
 
   /* -------------------- SET EDGES (Used by ReactFlow) -------------------- */
 
+  // setEdges: (incoming) => {
+  //   const { currentFlowId, flows } = get();
+
+  //   const updatedFlows = flows.map((f) => {
+  //     if (f.id !== currentFlowId) return f;
+
+  //     const prevEdges = f.elements.filter((e) => e.source && e.target);
+  //     const nodes = f.elements.filter((e) => e.data);
+
+  //     const nextEdges =
+  //       typeof incoming === "function"
+  //         ? incoming(prevEdges)
+  //         : incoming;
+
+  //     return { ...f, elements: [...nodes, ...nextEdges] };
+  //   });
+
+  //   saveAll(updatedFlows);
+  //   set({ flows: updatedFlows });
+  // },
+
   setEdges: (incoming) => {
     const { currentFlowId, flows } = get();
 
-    const updatedFlows = flows.map((f) => {
+    const updated = flows.map(f => {
       if (f.id !== currentFlowId) return f;
 
-      const prevEdges = f.elements.filter((e) => e.source && e.target);
-      const nodes = f.elements.filter((e) => e.data);
+      const edges = typeof incoming === "function"
+        ? incoming(f.elements.filter(e => e.source && e.target))
+        : incoming;
 
-      const nextEdges =
-        typeof incoming === "function"
-          ? incoming(prevEdges)
-          : incoming;
+      const nodes = f.elements.filter(e => e.data);
 
-      return { ...f, elements: [...nodes, ...nextEdges] };
+      return { ...f, elements: [...nodes, ...edges] };
     });
 
-    saveAll(updatedFlows);
-    set({ flows: updatedFlows });
+    set({ flows: updated });
+    saveAll(updated);
   },
 
   /* -------------------- EXPORT -------------------- */
@@ -319,6 +361,35 @@ const useFlowsStore = create((set, get) => ({
     });
   },
 
+  // createToolNodeAfter: (nodeId, tool) => {
+  //   const { flows, currentFlowId } = get();
+  //   const flow = flows.find((f) => f.id === currentFlowId);
+  //   if (!flow) return;
+
+  //   const parent = flow.elements.find((n) => n.id === nodeId);
+  //   if (!parent) return;
+
+  //   // If parent has no position, set default x/y
+  //   const parentPos = parent.position || { x: 0, y: 0 };
+
+  //   const newNode = {
+  //     id: "n-" + nanoid(),
+  //     type: `tool_${tool.type}`,
+  //     position: { x: parentPos.x + 240, y: parentPos.y },
+  //     data: { label: tool.name, meta: { tool: tool.id } },
+  //   };
+
+  //   const newEdge = {
+  //     id: "e-" + nanoid(),
+  //     source: nodeId,
+  //     target: newNode.id,
+  //   };
+
+  //   const updated = [...flow.elements, newNode, newEdge];
+
+  //   get().updateCurrentFlowElements(updated);
+  // },
+
   createToolNodeAfter: (nodeId, tool) => {
     const { flows, currentFlowId } = get();
     const flow = flows.find((f) => f.id === currentFlowId);
@@ -327,14 +398,20 @@ const useFlowsStore = create((set, get) => ({
     const parent = flow.elements.find((n) => n.id === nodeId);
     if (!parent) return;
 
-    // If parent has no position, set default x/y
     const parentPos = parent.position || { x: 0, y: 0 };
 
+    // NEW NODE POSITION (vertical chain)
     const newNode = {
       id: "n-" + nanoid(),
-      type: `tool_${tool.type}`,
-      position: { x: parentPos.x + 240, y: parentPos.y },
-      data: { label: tool.name, meta: { tool: tool.id } },
+      type: `customPill`,
+      position: {
+        x: parentPos.x,
+        y: parentPos.y + 140
+      },
+      data: {
+        label: tool.name,
+        meta: { tool: tool.id },
+      },
     };
 
     const newEdge = {
@@ -343,7 +420,10 @@ const useFlowsStore = create((set, get) => ({
       target: newNode.id,
     };
 
-    const updated = [...flow.elements, newNode, newEdge];
+    // REMOVE existing outgoing edges → enforce linear chain
+    const cleaned = flow.elements.filter(el => el.source !== nodeId);
+
+    const updated = [...cleaned, newNode, newEdge];
 
     get().updateCurrentFlowElements(updated);
   },

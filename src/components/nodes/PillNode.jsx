@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Handle, Position } from "reactflow";
 import { FiPlus, FiTrash2, FiSettings } from "react-icons/fi";
+import { Dropdown } from "react-bootstrap";
+import useFlowsStore from "../../store/useFlowsStore";
 
 export default function PillNode({ id, data }) {
     const [hover, setHover] = useState(false);
@@ -8,7 +10,9 @@ export default function PillNode({ id, data }) {
     const meta = data?.meta || {};
     const isTrigger = meta.type === "trigger" || id.includes("trigger");
     const isFirstNode = meta.isFirstNode || false;
-
+    const flow = useFlowsStore.getState().getCurrentFlow();
+    const hasChild = flow.elements.some(e => e.source === id);
+    const showNext = !hasChild;
 
 
     return (
@@ -26,17 +30,17 @@ export default function PillNode({ id, data }) {
             )}
 
             {/* Main pill container */}
-            <div className="pill-container" onClick={(e) => {
-                e.stopPropagation();
-                console.log("click open app pill-left", id)
-                window.dispatchEvent(
-                    new CustomEvent("wpaf:open-action-picker", {
-                        detail: { action: "open-app-picker", nodeId: id },
-                    })
-                );
-            }}>
+            <div className="pill-container" >
                 {/* Left icon */}
-                <div className="pill-left">
+                <div className="pill-left" onClick={(e) => {
+                    e.stopPropagation();
+                    console.log("click open app pill-left", id)
+                    window.dispatchEvent(
+                        new CustomEvent("wpaf:open-action-picker", {
+                            detail: { action: "open-app-picker", nodeId: id },
+                        })
+                    );
+                }}>
                     <FiPlus size={22} />
                 </div>
 
@@ -44,6 +48,21 @@ export default function PillNode({ id, data }) {
                 <div className="pill-text">
                     {data?.label || "Select an app"}
                 </div>
+
+                <div className="node-menu">
+                    <Dropdown>
+                        <Dropdown.Toggle variant="light" size="sm">⋮</Dropdown.Toggle>
+                        <Dropdown.Menu>
+                            <Dropdown.Item className="text-danger" onClick={(e) => {
+                                e.stopPropagation();
+                                window.dispatchEvent(
+                                    new CustomEvent("wpaf:delete-node", { detail: { id } })
+                                );
+                            }} >Delete</Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown>
+                </div>
+
 
                 {/* Output connector */}
                 <div className="pill-connector"></div>
@@ -53,23 +72,25 @@ export default function PillNode({ id, data }) {
             </div>
 
             {/* Dotted next-step add */}
-            <div className="pill-next">
-                <div className="pill-dash" />
-                <div
-                    className="pill-next-box"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        console.log("click open app pill-next-box", id)
-                        window.dispatchEvent(
-                            new CustomEvent("wpaf:open-action-picker", {
-                                detail: { action: "open-app-picker", nodeId: id },
-                            })
-                        );
-                    }}
-                >
-                    +
+            {showNext && (
+                <div className="pill-next">
+                    <div className="pill-dash" />
+                    <div
+                        className="pill-next-box"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("click open app pill-next-box", id)
+                            window.dispatchEvent(
+                                new CustomEvent("wpaf:add-node-after", {
+                                    detail: { parentId: id }
+                                })
+                            );
+                        }}
+                    >
+                        +
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Hover Toolbar */}
             {/* {hover && (

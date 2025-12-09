@@ -9,7 +9,16 @@ export default function ActionPickerModal({ show, onHide, nodeId }) {
     console.log("ActionPickerModal", show, onHide, nodeId);
     const onSelectAction = (action) => {
         console.log("Selected action:", action);
-        useFlowsStore.getState().setNodeAppById(nodeId, action);
+        const store = useFlowsStore.getState();
+
+        if (window._addingNewNode) {
+            // create NEW node
+            store.createToolNodeAfter(nodeId, action);
+            window._addingNewNode = false;
+        } else {
+            // update EXISTING node
+            store.setNodeAppById(nodeId, action);
+        }
         onHide();
     };
 

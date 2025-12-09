@@ -5,35 +5,35 @@ const Sidebar = () => {
   return (
     <div className='p-3'>
       <h5 className="text-primary">Actions</h5>
-      <ListGroup variant="flush">
+      <ListGroup >
         <ListGroup.Item>
-          <Button variant="link" className="text-dark">Email</Button>
+          Email
         </ListGroup.Item>
         <ListGroup.Item>
-          <Button variant="link" className="text-dark">SMS</Button>
+          SMS
         </ListGroup.Item>
         <ListGroup.Item>
-          <Button variant="link" className="text-dark">Update Profile Property</Button>
+          Update Profile Property
         </ListGroup.Item>
         <ListGroup.Item>
-          <Button variant="link" className="text-dark">Notification</Button>
+          Notification
         </ListGroup.Item>
         <ListGroup.Item>
-          <Button variant="link" className="text-dark">Webhook</Button>
+          Webhook
         </ListGroup.Item>
       </ListGroup>
 
       <h5 className="text-primary mt-4">Timing</h5>
-      <ListGroup variant="flush">
+      <ListGroup>
         <ListGroup.Item>
-          <Button variant="link" className="text-dark">Time Delay</Button>
+          Time Delay
         </ListGroup.Item>
       </ListGroup>
 
       <h5 className="text-primary mt-4">Logic</h5>
-      <ListGroup variant="flush">
+      <ListGroup>
         <ListGroup.Item>
-          <Button variant="link" className="text-dark">Conditional Split</Button>
+          Conditional Split
         </ListGroup.Item>
       </ListGroup>
     </div>

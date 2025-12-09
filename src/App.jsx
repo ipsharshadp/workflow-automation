@@ -16,6 +16,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [show, setShow] = useState(false);
   const [nodeId, setNodeId] = useState(null);
+  const deleteFlow = useFlowsStore(s => s.deleteFlow)
 
   useEffect(() => {
     init();              // Load flows
@@ -29,6 +30,40 @@ export default function App() {
 
     window.addEventListener("wpaf:open-action-picker", openModal);
     return () => window.removeEventListener("wpaf:open-action-picker", openModal);
+  }, []);
+
+  useEffect(() => {
+    const deleteNode = (e) => {
+      const id = e.detail.id;
+      console.log("deleteNode", id);
+      //deleteFlow(id);
+      const store = useFlowsStore.getState();
+      const flow = store.getCurrentFlow();
+      console.log("flow", flow);
+
+      // const newElements = flow.elements.filter(el => el.id !== id && el.source !== id && el.target !== id);
+      let newElements = flow.elements.filter((el) => el.id !== id);
+      store.updateCurrentFlowElements(newElements);
+    };
+
+    window.addEventListener("wpaf:delete-node", deleteNode);
+    return () => window.removeEventListener("wpaf:delete-node", deleteNode);
+  }, []);
+
+  useEffect(() => {
+
+    const addNodeAfter = (e) => {
+      const parentId = e.detail.parentId;
+
+      // Open picker, but mark that it is "new node" mode
+      setNodeId(parentId);
+      window._addingNewNode = true;
+      setShow(true);
+    };
+
+    window.addEventListener("wpaf:add-node-after", addNodeAfter);
+    return () => window.removeEventListener("wpaf:add-node-after", addNodeAfter);
+
   }, []);
 
   if (!ready) return <div>Loading…</div>;

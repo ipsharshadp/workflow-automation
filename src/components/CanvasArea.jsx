@@ -36,66 +36,78 @@ export default function CanvasArea() {
 
   const reactFlowWrapper = useRef(null);
 
-  // derive initial nodes/edges from current flow
+  // derive initial nodes/edges from current flow (used only at mount or when flow id changes)
   const initialNodes = (flow?.elements || []).filter((el) => el.data) || [];
   const initialEdges = (flow?.elements || []).filter((el) => el.source && el.target) || [];
 
-  // RF states
+  // RF local states
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // keep ReactFlow in-sync when flow changes externally (e.g., load/import)
+  /*
+    IMPORTANT: only reset local RF states when the flow identity changes (not on every element mutation).
+    Resetting on every elements change causes ReactFlow to remount nodes repeatedly and breaks click handlers.
+  */
   useEffect(() => {
-    // update local RF states to reflect store flow
-    setNodes(initialNodes);
-    setEdges(initialEdges);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flow?.id]); // only when flow identity changes
+    const nodes = (flow?.elements || []).filter(e => e.data);
+    const edges = (flow?.elements || []).filter(e => e.source && e.target);
+    setNodes(nodes);
+    setEdges(edges);
+  }, [flow?.elements]);
 
   /* persist combined elements to store */
   const saveBackToStore = useCallback(() => {
+    // Use the latest nodes/edges from state captured in this closure
     const all = [...nodes, ...edges];
     updateFlowElements(all);
   }, [nodes, edges, updateFlowElements]);
 
+  /* ---------------- NODE / EDGE change handlers ---------------- */
   const onNodesChangeHandler = useCallback(
     (changes) => {
+      // update local RF nodes
       setNodes((nds) => applyNodeChanges(changes, nds));
-      // persist nodes to Zustand
+
+      // persist node changes to store nodes (Zustand setNodes accepts function or array)
       setNodesInStore((curNodes) => {
         const updated = applyNodeChanges(changes, curNodes);
         return updated;
       });
-      // small debounce-ish persist of combined elements
+
+      // small debounce-ish persist of combined elements (works with latest nodes/edges)
       setTimeout(saveBackToStore, 0);
     },
-    [setNodesInStore, saveBackToStore]
+    [setNodesInStore, saveBackToStore, setNodes]
   );
 
   const onEdgesChangeHandler = useCallback(
     (changes) => {
+      // update local RF edges
       setEdges((eds) => applyEdgeChanges(changes, eds));
-      // persist edges to Zustand
+
+      // persist edges to store
       setEdgesInStore((curEdges) => {
         const updated = applyEdgeChanges(changes, curEdges);
         return updated;
       });
+
       setTimeout(saveBackToStore, 0);
     },
-    [setEdgesInStore, saveBackToStore]
+    [setEdgesInStore, saveBackToStore, setEdges]
   );
 
   const onConnect = useCallback(
     (params) => {
+      // add edge to local state
       setEdges((eds) => addEdge(params, eds));
-      // persist to store edges as well
-      setEdgesInStore((curEdges) => {
-        const next = addEdge(params, curEdges);
-        return next;
-      });
+
+      // persist to store edges as well (using function form)
+      setEdgesInStore((curEdges) => addEdge(params, curEdges));
+
+      // persist combined elements
       setTimeout(saveBackToStore, 0);
     },
-    [setEdgesInStore, saveBackToStore]
+    [setEdgesInStore, saveBackToStore, setEdges]
   );
 
   /* ---------------------- DRAG OVER ---------------------- */
@@ -119,10 +131,13 @@ export default function CanvasArea() {
         y: e.clientY - bounds.top,
       };
 
-      // Add App (payload.id present)
+      // prepare new node
+      const id = "n-" + Date.now();
+
+      let newNode;
       if (payload?.id) {
-        const newNode = {
-          id: "n-" + Date.now(),
+        newNode = {
+          id,
           type: "customPill",
           position,
           data: {
@@ -130,24 +145,10 @@ export default function CanvasArea() {
             meta: { app: payload.id },
           },
         };
-
-        setNodes((nds) => {
-          const next = [...nds, newNode];
-          // persist to store nodes
-          setNodesInStore(next);
-          setTimeout(() => updateFlowElements([...next, ...edges]), 0);
-          return next;
-        });
-
-        return;
-      }
-
-      // Add Tool (payload.tool present)
-      if (payload?.tool) {
+      } else if (payload?.tool) {
         const t = payload.tool;
-
-        const newNode = {
-          id: "n-" + Date.now(),
+        newNode = {
+          id,
           type: `tool_${t.type}`,
           position,
           data: {
@@ -155,16 +156,22 @@ export default function CanvasArea() {
             meta: { tool: t.id },
           },
         };
-
-        setNodes((nds) => {
-          const next = [...nds, newNode];
-          setNodesInStore(next);
-          setTimeout(() => updateFlowElements([...next, ...edges]), 0);
-          return next;
-        });
+      } else {
+        return;
       }
+
+      // Add new node to local state and persist to store.
+      // We compute "currentEdges" from latest state variable rather than relying on a possibly stale closure.
+      setNodes((nds) => {
+        const next = [...nds, newNode];
+        // persist nodes to store (function form)
+        setNodesInStore(next);
+        // persist full elements using current edges state (read edges from closure)
+        setTimeout(() => updateFlowElements([...next, ...edges]), 0);
+        return next;
+      });
     },
-    // edges is read-only snapshot here — that's fine; updates will persist on edges change
+    // we intentionally include edges here so that closure has latest value when drop occurs
     [edges, setNodesInStore, updateFlowElements]
   );
 
