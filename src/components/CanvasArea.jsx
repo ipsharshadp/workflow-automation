@@ -36,94 +36,85 @@ export default function CanvasArea() {
 
   const reactFlowWrapper = useRef(null);
 
-  // derive initial nodes/edges from current flow (used only at mount or when flow id changes)
+  // initial snapshot used to initialise RF local state
   const initialNodes = (flow?.elements || []).filter((el) => el.data) || [];
   const initialEdges = (flow?.elements || []).filter((el) => el.source && el.target) || [];
 
-  // RF local states
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  /*
-    IMPORTANT: only reset local RF states when the flow identity changes (not on every element mutation).
-    Resetting on every elements change causes ReactFlow to remount nodes repeatedly and breaks click handlers.
-  */
   useEffect(() => {
-    const nodes = (flow?.elements || []).filter(e => e.data);
-    const edges = (flow?.elements || []).filter(e => e.source && e.target);
-    setNodes(nodes);
-    setEdges(edges);
+    if (!flow) return;
+
+    const storeNodes = flow.elements.filter(e => e.data);
+    const storeEdges = flow.elements.filter(e => e.source && e.target);
+
+    // Only update if different length OR changed ids
+    const nodesChanged =
+      storeNodes.length !== nodes.length ||
+      storeNodes.some((n, i) => n.id !== nodes[i]?.id);
+
+    const edgesChanged =
+      storeEdges.length !== edges.length ||
+      storeEdges.some((e, i) => e.id !== edges[i]?.id);
+
+    if (nodesChanged) {
+      setNodes(storeNodes);
+    }
+    if (edgesChanged) {
+      setEdges(storeEdges);
+    }
   }, [flow?.elements]);
 
-  /* persist combined elements to store */
   const saveBackToStore = useCallback(() => {
-    // Use the latest nodes/edges from state captured in this closure
     const all = [...nodes, ...edges];
     updateFlowElements(all);
   }, [nodes, edges, updateFlowElements]);
 
-  /* ---------------- NODE / EDGE change handlers ---------------- */
   const onNodesChangeHandler = useCallback(
     (changes) => {
-      // update local RF nodes
       setNodes((nds) => applyNodeChanges(changes, nds));
-
-      // persist node changes to store nodes (Zustand setNodes accepts function or array)
       setNodesInStore((curNodes) => {
         const updated = applyNodeChanges(changes, curNodes);
         return updated;
       });
-
-      // small debounce-ish persist of combined elements (works with latest nodes/edges)
       setTimeout(saveBackToStore, 0);
     },
-    [setNodesInStore, saveBackToStore, setNodes]
+    [setNodesInStore, saveBackToStore]
   );
 
   const onEdgesChangeHandler = useCallback(
     (changes) => {
-      // update local RF edges
       setEdges((eds) => applyEdgeChanges(changes, eds));
-
-      // persist edges to store
       setEdgesInStore((curEdges) => {
         const updated = applyEdgeChanges(changes, curEdges);
         return updated;
       });
-
       setTimeout(saveBackToStore, 0);
     },
-    [setEdgesInStore, saveBackToStore, setEdges]
+    [setEdgesInStore, saveBackToStore]
   );
 
   const onConnect = useCallback(
     (params) => {
-      // add edge to local state
       setEdges((eds) => addEdge(params, eds));
-
-      // persist to store edges as well (using function form)
       setEdgesInStore((curEdges) => addEdge(params, curEdges));
-
-      // persist combined elements
       setTimeout(saveBackToStore, 0);
     },
-    [setEdgesInStore, saveBackToStore, setEdges]
+    [setEdgesInStore, saveBackToStore]
   );
 
-  /* ---------------------- DRAG OVER ---------------------- */
   const onDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
   };
 
-  /* ---------------------- DROP HANDLER ---------------------- */
   const onDrop = useCallback(
     (e) => {
       e.preventDefault();
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
       const raw = e.dataTransfer.getData("application/json");
       if (!raw) return;
-
       const payload = JSON.parse(raw);
 
       const position = {
@@ -131,9 +122,7 @@ export default function CanvasArea() {
         y: e.clientY - bounds.top,
       };
 
-      // prepare new node
       const id = "n-" + Date.now();
-
       let newNode;
       if (payload?.id) {
         newNode = {
@@ -160,26 +149,21 @@ export default function CanvasArea() {
         return;
       }
 
-      // Add new node to local state and persist to store.
-      // We compute "currentEdges" from latest state variable rather than relying on a possibly stale closure.
+      // add to local nodes and persist; read edges from current state closure
       setNodes((nds) => {
         const next = [...nds, newNode];
-        // persist nodes to store (function form)
         setNodesInStore(next);
-        // persist full elements using current edges state (read edges from closure)
         setTimeout(() => updateFlowElements([...next, ...edges]), 0);
         return next;
       });
     },
-    // we intentionally include edges here so that closure has latest value when drop occurs
     [edges, setNodesInStore, updateFlowElements]
   );
 
-  /* ---------------------- RENDER ---------------------- */
   if (!flow) return <div>No flow selected</div>;
 
   return (
-    <div className="canvas-wrap" ref={reactFlowWrapper} >
+    <div className="canvas-wrap" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         edges={edges}

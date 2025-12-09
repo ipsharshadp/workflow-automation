@@ -36,13 +36,18 @@ export default function App() {
     const deleteNode = (e) => {
       const id = e.detail.id;
       console.log("deleteNode", id);
-      //deleteFlow(id);
       const store = useFlowsStore.getState();
       const flow = store.getCurrentFlow();
-      console.log("flow", flow);
+      if (!flow) return;
 
-      // const newElements = flow.elements.filter(el => el.id !== id && el.source !== id && el.target !== id);
-      let newElements = flow.elements.filter((el) => el.id !== id);
+      // remove node and any edges that reference it (source or target)
+      const newElements = flow.elements.filter(el => {
+        if (el.id === id) return false; // remove node
+        if (el.source === id) return false; // remove outgoing edges
+        if (el.target === id) return false; // remove incoming edges
+        return true;
+      });
+
       store.updateCurrentFlowElements(newElements);
     };
 
