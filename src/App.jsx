@@ -35,22 +35,37 @@ export default function App() {
   useEffect(() => {
     const deleteNode = (e) => {
       const id = e.detail.id;
-      console.log("deleteNode", id);
+      const nodeId = e.detail.id;
       const store = useFlowsStore.getState();
-      const flow = store.getCurrentFlow();
-      if (!flow) return;
+      store.deleteNodeById(nodeId);
 
-      // remove node and any edges that reference it (source or target)
-      const newElements = flow.elements.filter(el => {
-        if (el.id === id) return false; // remove node
-        if (el.source === id) return false; // remove outgoing edges
-        if (el.target === id) return false; // remove incoming edges
-        return true;
-      });
+      // const store = useFlowsStore.getState();
+      // const flow = store.getCurrentFlow();
 
-      store.updateCurrentFlowElements(newElements);
+      // const elements = flow.elements;
+
+      // // find parent and child of this node
+      // const parentEdge = elements.find(el => el.target === id);
+      // const childEdge = elements.find(el => el.source === id);
+
+      // // remove node + its edges
+      // let newElements = elements.filter(el =>
+      //   el.id !== id &&
+      //   el.source !== id &&
+      //   el.target !== id
+      // );
+
+      // // auto reconnect parent → child
+      // if (parentEdge && childEdge) {
+      //   newElements.push({
+      //     id: "e-reconnect-" + Date.now(),
+      //     source: parentEdge.source,
+      //     target: childEdge.target
+      //   });
+      // }
+
+      // store.updateCurrentFlowElements(newElements);
     };
-
     window.addEventListener("wpaf:delete-node", deleteNode);
     return () => window.removeEventListener("wpaf:delete-node", deleteNode);
   }, []);

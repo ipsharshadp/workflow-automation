@@ -8,35 +8,45 @@ export default function PillNode({ id, data }) {
     const [hover, setHover] = useState(false);
 
     const meta = data?.meta || {};
-    const isTrigger = meta.type === "trigger" || id.includes("trigger");
     const isFirstNode = meta.isFirstNode || false;
 
-    // get current flow once from store; this won't cause store-wide writes
-    const flow = useFlowsStore.getState().getCurrentFlow();
-    const hasChild = !!flow?.elements?.some((e) => e.source === id);
+    // Subscribe ONLY to hasChild (this triggers correct re-render after delete or add)
+    const hasChild = useFlowsStore((state) => {
+        const f = state.getCurrentFlow();
+        if (!f?.elements) return false;
+        return f.elements.some((el) => el.source === id);
+    });
+    console.log("hasChild", hasChild);
+    console.log("data", data);
+    console.log("id", id);
+
     const showNext = !hasChild;
 
-    // if node already has an app/tool show edit icon; otherwise show plus to add app
-    const hasAction = !!(meta?.app || meta?.tool || meta?.appName || meta?.kind);
+    // Show settings if app/tool selected, else show +
+    const hasAction = !!(meta.app || meta.tool || meta.appName || meta.kind);
 
-    const openPickerForNode = (nodeId) => {
+    const openPicker = () => {
         window.dispatchEvent(
             new CustomEvent("wpaf:open-action-picker", {
-                detail: { action: "open-app-picker", nodeId },
+                detail: { action: "open-app-picker", nodeId: id },
             })
         );
     };
 
-    const addAfter = (parentId) => {
+    const addAfter = () => {
         window.dispatchEvent(
             new CustomEvent("wpaf:add-node-after", {
-                detail: { parentId },
+                detail: { parentId: id },
             })
         );
     };
 
-    const deleteNode = (nodeId) => {
-        window.dispatchEvent(new CustomEvent("wpaf:delete-node", { detail: { id: nodeId } }));
+    const deleteNode = () => {
+        window.dispatchEvent(
+            new CustomEvent("wpaf:delete-node", {
+                detail: { id },
+            })
+        );
     };
 
     return (
@@ -45,83 +55,47 @@ export default function PillNode({ id, data }) {
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
         >
-            {isTrigger && (
-                <div className="pill-trigger-tag">
-                    <span>Trigger</span>
-                    <div className="pill-trigger-count">1</div>
-                </div>
-            )}
-
             <div className="pill-container">
-                {/* Left icon: edit if hasAction else add */}
-                <div
-                    className="pill-left"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        openPickerForNode(id);
-                    }}
-                >
+                {/* LEFT ICON (settings or add app) */}
+                <div className="pill-left" onClick={openPicker}>
                     {hasAction ? <FiSettings size={20} /> : <FiPlus size={22} />}
                 </div>
 
-                <div className="pill-text">{data?.label || "Select an app"}</div>
+                {/* LABEL */}
+                <div className="pill-text">{data?.label || "Select App"}</div>
 
+                {/* NODE MENU (edit + delete) */}
                 <div className="node-menu">
                     <Dropdown>
                         <Dropdown.Toggle variant="light" size="sm">
                             ⋮
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
-                            <Dropdown.Item
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    openPickerForNode(id);
-                                }}
-                            >
-                                Edit
-                            </Dropdown.Item>
-                            <Dropdown.Item
-                                className="text-danger"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteNode(id);
-                                }}
-                            >
+                            <Dropdown.Item onClick={openPicker}>Edit</Dropdown.Item>
+                            <Dropdown.Item onClick={deleteNode} className="text-danger">
                                 Delete
                             </Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
                 </div>
 
-                <div className="pill-connector" />
-
                 <Handle type="source" position={Position.Right} />
                 <Handle type="target" position={Position.Left} />
             </div>
 
+            {/* PLUS ONLY FOR LAST NODE */}
             {showNext && (
                 <div className="pill-next">
-                    <div className="pill-dash" />
-                    <div
-                        className="pill-next-box"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            addAfter(id);
-                        }}
-                    >
+                    <div className="pill-dash"></div>
+                    <div className="pill-next-box" onClick={addAfter}>
                         +
                     </div>
                 </div>
             )}
 
+            {/* DELETE ICON (not for first node) */}
             {!isFirstNode && (
-                <div
-                    className="pill-delete"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        deleteNode(id);
-                    }}
-                >
+                <div className="pill-delete" onClick={deleteNode}>
                     <FiTrash2 size={18} />
                 </div>
             )}

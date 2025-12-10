@@ -19,6 +19,17 @@ const createDefaultFlow = () => ({
   createdAt: Date.now(),
 });
 
+const sortNodes = (nodes) =>
+  nodes.slice().sort((a, b) => (a.position?.y || 0) - (b.position?.y || 0));
+
+const separate = (elements) => {
+  const nodes = elements.filter((e) => e.data);
+  const edges = elements.filter((e) => e.source && e.target);
+  return { nodes, edges };
+};
+
+
+
 /* -------------------- STORAGE HELPERS -------------------- */
 
 function loadAll() {
@@ -115,16 +126,45 @@ const useFlowsStore = create((set, get) => ({
 
   /* -------------------- UPDATE ENTIRE ELEMENT LIST -------------------- */
 
+  // updateCurrentFlowElements: (elements) => {
+  //   set((state) => {
+  //     const flows = state.flows.map((f) => {
+  //       if (f.id !== state.currentFlowId) return f;
+  //       return { ...f, elements };
+  //     });
+  //     saveAll(flows);
+  //     return { flows };
+  //   });
+  // },
+
+
   updateCurrentFlowElements: (elements) => {
-    set((state) => {
-      const flows = state.flows.map((f) => {
-        if (f.id !== state.currentFlowId) return f;
-        return { ...f, elements };
-      });
-      saveAll(flows);
-      return { flows };
+    const { flows, currentFlowId } = get();
+    console.log("currentFlowId================", currentFlowId);
+    // Split
+    let { nodes, edges } = separate(elements);
+    console.log("nodes================", nodes);
+
+    // Sort nodes for deterministic ordering
+    nodes = sortNodes(nodes);
+
+    const newElements = [...nodes, ...edges];
+
+    const updatedFlows = flows.map((f) => {
+      console.log("f.id================", f.id);
+      console.log("currentFlowId================", currentFlowId);
+      console.log("before given new elements", newElements);
+      console.log("before given flow", f.elements);
+      const updatedFlow = f.id === currentFlowId ? { ...f, elements: newElements } : f
+      console.log("updatedFlow================", updatedFlow);
+      return updatedFlow
     });
+    console.log("final updatedFlows================", updatedFlows);
+
+    saveAll(updatedFlows);
+    set({ flows: updatedFlows });
   },
+
 
   /* -------------------- SAFE UPDATE NODE -------------------- */
 
@@ -427,6 +467,35 @@ const useFlowsStore = create((set, get) => ({
 
     get().updateCurrentFlowElements(updated);
   },
+  /* ---------------------------------------------
+   DELETE NODE (auto reconnect chain)
+---------------------------------------------*/
+  deleteNodeById: (nodeId) => {
+    console.log("deleteNodeById", nodeId);
+    const flow = get().getCurrentFlow();
+    if (!flow) return;
+
+    const elements = [...flow.elements];
+
+    const parentEdge = elements.find((el) => el.target === nodeId);
+    const childEdge = elements.find((el) => el.source === nodeId);
+    // remove node + its edges
+    let newElements = elements.filter(
+      (el) => el.id !== nodeId && el.source !== nodeId && el.target !== nodeId
+    );
+
+
+
+    // reconnect chain if middle node removed
+    if (parentEdge && childEdge) {
+      newElements.push({
+        id: "e-" + nanoid(),
+        source: parentEdge.source,
+        target: childEdge.target
+      });
+    }
+    get().updateCurrentFlowElements(newElements);
+  }
 }));
 
 export default useFlowsStore;

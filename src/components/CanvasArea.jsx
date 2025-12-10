@@ -1,4 +1,3 @@
-// src/components/CanvasArea.jsx
 import React, { useRef, useCallback, useEffect } from "react";
 import ReactFlow, {
   Background,
@@ -9,11 +8,9 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
 } from "reactflow";
-
 import "reactflow/dist/style.css";
 
 import useFlowsStore from "../store/useFlowsStore";
-
 import PillNode from "./nodes/PillNode";
 import ConditionNode from "./nodes/ConditionNode";
 import RouterNode from "./nodes/RouterNode";
@@ -36,74 +33,71 @@ export default function CanvasArea() {
 
   const reactFlowWrapper = useRef(null);
 
-  // initial snapshot used to initialise RF local state
   const initialNodes = (flow?.elements || []).filter((el) => el.data) || [];
   const initialEdges = (flow?.elements || []).filter((el) => el.source && el.target) || [];
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  // 🔥 REAL-TIME, SAFE SYNC
   useEffect(() => {
-    if (!flow) return;
+    if (!flow?.elements) return;
 
-    const storeNodes = flow.elements.filter(e => e.data);
-    const storeEdges = flow.elements.filter(e => e.source && e.target);
+    const storeNodes = flow.elements
+      .filter((e) => e.data)
+      .slice()
+      .sort((a, b) => (a.position?.y || 0) - (b.position?.y || 0));
 
-    // Only update if different length OR changed ids
-    const nodesChanged =
-      storeNodes.length !== nodes.length ||
-      storeNodes.some((n, i) => n.id !== nodes[i]?.id);
+    const storeEdges = flow.elements.filter((e) => e.source && e.target);
 
-    const edgesChanged =
-      storeEdges.length !== edges.length ||
-      storeEdges.some((e, i) => e.id !== edges[i]?.id);
+    const nodeIdsChanged =
+      storeNodes.map((n) => n.id).join("|") !== nodes.map((n) => n.id).join("|");
 
-    if (nodesChanged) {
-      setNodes(storeNodes);
-    }
-    if (edgesChanged) {
-      setEdges(storeEdges);
-    }
+    const labelsChanged = storeNodes.some((n) => {
+      const local = nodes.find((ln) => ln.id === n.id);
+      return local && local.data?.label !== n.data?.label;
+    });
+
+    const edgeIdsChanged =
+      storeEdges.map((e) => e.id).join("|") !== edges.map((e) => e.id).join("|");
+
+    if (nodeIdsChanged || labelsChanged) setNodes(storeNodes);
+    if (edgeIdsChanged) setEdges(storeEdges);
   }, [flow?.elements]);
 
-  const saveBackToStore = useCallback(() => {
-    const all = [...nodes, ...edges];
-    updateFlowElements(all);
+  // HANDLERS ----------------------------------------------------------
+  const saveToStore = useCallback(() => {
+    updateFlowElements([...nodes, ...edges]);
   }, [nodes, edges, updateFlowElements]);
 
   const onNodesChangeHandler = useCallback(
     (changes) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
-      setNodesInStore((curNodes) => {
-        const updated = applyNodeChanges(changes, curNodes);
-        return updated;
-      });
-      setTimeout(saveBackToStore, 0);
+      setNodesInStore((prev) => applyNodeChanges(changes, prev));
+      setTimeout(saveToStore, 0);
     },
-    [setNodesInStore, saveBackToStore]
+    [setNodesInStore, saveToStore]
   );
 
   const onEdgesChangeHandler = useCallback(
     (changes) => {
       setEdges((eds) => applyEdgeChanges(changes, eds));
-      setEdgesInStore((curEdges) => {
-        const updated = applyEdgeChanges(changes, curEdges);
-        return updated;
-      });
-      setTimeout(saveBackToStore, 0);
+      setEdgesInStore((prev) => applyEdgeChanges(changes, prev));
+      setTimeout(saveToStore, 0);
     },
-    [setEdgesInStore, saveBackToStore]
+    [setEdgesInStore, saveToStore]
   );
 
   const onConnect = useCallback(
     (params) => {
       setEdges((eds) => addEdge(params, eds));
-      setEdgesInStore((curEdges) => addEdge(params, curEdges));
-      setTimeout(saveBackToStore, 0);
+      setEdgesInStore((prev) => addEdge(params, prev));
+      setTimeout(saveToStore, 0);
     },
-    [setEdgesInStore, saveBackToStore]
+    [setEdgesInStore, saveToStore]
   );
 
+  // DRAG / DROP --------------------------------------------------------
   const onDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
@@ -115,6 +109,7 @@ export default function CanvasArea() {
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
       const raw = e.dataTransfer.getData("application/json");
       if (!raw) return;
+
       const payload = JSON.parse(raw);
 
       const position = {
@@ -123,43 +118,28 @@ export default function CanvasArea() {
       };
 
       const id = "n-" + Date.now();
-      let newNode;
-      if (payload?.id) {
-        newNode = {
-          id,
-          type: "customPill",
-          position,
-          data: {
-            label: payload.name,
-            meta: { app: payload.id },
-          },
-        };
-      } else if (payload?.tool) {
-        const t = payload.tool;
-        newNode = {
-          id,
-          type: `tool_${t.type}`,
-          position,
-          data: {
-            label: t.name,
-            meta: { tool: t.id },
-          },
-        };
-      } else {
-        return;
-      }
 
-      // add to local nodes and persist; read edges from current state closure
+      const newNode = {
+        id,
+        type: "customPill",
+        position,
+        data: {
+          label: payload.name,
+          meta: { app: payload.id },
+        },
+      };
+
       setNodes((nds) => {
-        const next = [...nds, newNode];
-        setNodesInStore(next);
-        setTimeout(() => updateFlowElements([...next, ...edges]), 0);
-        return next;
+        const updated = [...nds, newNode];
+        setNodesInStore(updated);
+        setTimeout(() => updateFlowElements([...updated, ...edges]), 0);
+        return updated;
       });
     },
     [edges, setNodesInStore, updateFlowElements]
   );
 
+  // RENDER --------------------------------------------------------------
   if (!flow) return <div>No flow selected</div>;
 
   return (
@@ -175,7 +155,7 @@ export default function CanvasArea() {
         onDragOver={onDragOver}
         fitView
       >
-        <Controls className="Controls" />
+        <Controls />
         <Background />
       </ReactFlow>
     </div>
