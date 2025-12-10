@@ -73,8 +73,8 @@ export default function CanvasArea() {
   const onNodesChangeHandler = useCallback(
     (changes) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
-      setNodesInStore((prev) => applyNodeChanges(changes, prev));
-      setTimeout(saveToStore, 0);
+      //setNodesInStore((prev) => applyNodeChanges(changes, prev));
+      //setTimeout(saveToStore, 0);
     },
     [setNodesInStore, saveToStore]
   );
@@ -82,8 +82,8 @@ export default function CanvasArea() {
   const onEdgesChangeHandler = useCallback(
     (changes) => {
       setEdges((eds) => applyEdgeChanges(changes, eds));
-      setEdgesInStore((prev) => applyEdgeChanges(changes, prev));
-      setTimeout(saveToStore, 0);
+      //setEdgesInStore((prev) => applyEdgeChanges(changes, prev));
+      //setTimeout(saveToStore, 0);
     },
     [setEdgesInStore, saveToStore]
   );
@@ -91,8 +91,8 @@ export default function CanvasArea() {
   const onConnect = useCallback(
     (params) => {
       setEdges((eds) => addEdge(params, eds));
-      setEdgesInStore((prev) => addEdge(params, prev));
-      setTimeout(saveToStore, 0);
+      //setEdgesInStore((prev) => addEdge(params, prev));
+      //setTimeout(saveToStore, 0);
     },
     [setEdgesInStore, saveToStore]
   );
@@ -131,8 +131,8 @@ export default function CanvasArea() {
 
       setNodes((nds) => {
         const updated = [...nds, newNode];
-        setNodesInStore(updated);
-        setTimeout(() => updateFlowElements([...updated, ...edges]), 0);
+        //setNodesInStore(updated);
+        //setTimeout(() => updateFlowElements([...updated, ...edges]), 0);
         return updated;
       });
     },
