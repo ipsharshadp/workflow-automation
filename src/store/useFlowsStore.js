@@ -140,27 +140,17 @@ const useFlowsStore = create((set, get) => ({
 
   updateCurrentFlowElements: (elements) => {
     const { flows, currentFlowId } = get();
-    console.log("currentFlowId================", currentFlowId);
     // Split
     let { nodes, edges } = separate(elements);
-    console.log("nodes================", nodes);
-
     // Sort nodes for deterministic ordering
     nodes = sortNodes(nodes);
 
     const newElements = [...nodes, ...edges];
 
     const updatedFlows = flows.map((f) => {
-      console.log("f.id================", f.id);
-      console.log("currentFlowId================", currentFlowId);
-      console.log("before given new elements", newElements);
-      console.log("before given flow", f.elements);
       const updatedFlow = f.id === currentFlowId ? { ...f, elements: newElements } : f
-      console.log("updatedFlow================", updatedFlow);
       return updatedFlow
     });
-    console.log("final updatedFlows================", updatedFlows);
-
     saveAll(updatedFlows);
     set({ flows: updatedFlows });
   },
@@ -471,7 +461,6 @@ const useFlowsStore = create((set, get) => ({
    DELETE NODE (auto reconnect chain)
 ---------------------------------------------*/
   deleteNodeById: (nodeId) => {
-    console.log("deleteNodeById", nodeId);
     const flow = get().getCurrentFlow();
     if (!flow) return;
 
