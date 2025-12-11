@@ -7,6 +7,7 @@ import ReactFlow, {
   applyEdgeChanges,
   useNodesState,
   useEdgesState,
+  SmoothStepEdge
 } from "reactflow";
 import "reactflow/dist/style.css";
 
@@ -16,7 +17,7 @@ import ConditionNode from "./nodes/ConditionNode";
 import RouterNode from "./nodes/RouterNode";
 import DelayNode from "./nodes/DelayNode";
 import JsonNode from "./nodes/JsonNode";
-
+const edgeTypes = { smoothstep: SmoothStepEdge };
 const nodeTypes = {
   customPill: PillNode,
   tool_condition: ConditionNode,
@@ -48,6 +49,7 @@ export default function CanvasArea() {
       .slice()
       .sort((a, b) => (a.position?.y || 0) - (b.position?.y || 0));
 
+    console.log("flow?.elements", flow?.elements)
     const storeEdges = flow.elements.filter((e) => e.source && e.target);
 
     const nodeIdsChanged =
@@ -146,7 +148,10 @@ export default function CanvasArea() {
     <div className="canvas-wrap" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={edges.map(e => ({ ...e, type: "smoothstep" }))}
+        edgeTypes={{
+          smoothstep: SmoothStepEdge
+        }}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChangeHandler}
         onEdgesChange={onEdgesChangeHandler}

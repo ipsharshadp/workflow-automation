@@ -144,8 +144,8 @@
 }
 
 .pill-next-box {
-  width: 26px;
-  height: 26px;
+  width: 50px;
+  height: 50px;
   border: 2px dashed #b8bcc7;
   border-radius: 6px;
   margin-left: 6px;
@@ -257,4 +257,63 @@
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+
+.condition-card {
+  background: #fff;
+  border: 2px solid #1B254B;
+  border-radius: 16px;
+  padding: 15px;
+  width: 260px;
+}
+
+.condition-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.condition-title {
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.condition-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.condition-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.condition-label-box {
+  padding: 4px 8px;
+  background: #F1F5F9;
+  border-radius: 8px;
+  flex-grow: 1;
+}
+
+.condition-plus,
+.condition-delete {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.condition-add-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #333;
+  padding-top: 8px;
 }

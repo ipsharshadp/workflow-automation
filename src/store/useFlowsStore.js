@@ -419,6 +419,41 @@ const useFlowsStore = create((set, get) => ({
 
   //   get().updateCurrentFlowElements(updated);
   // },
+  createRouterNodeAfter: (parentId, tool) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find((f) => f.id === currentFlowId);
+    if (!flow) return;
+
+    const parent = flow.elements.find((n) => n.id === parentId);
+    if (!parent) return;
+
+    const p = parent.position || { x: 0, y: 0 };
+
+    const newNode = {
+      id: "n-" + nanoid(),
+      type: "tool_router",
+      position: { x: p.x + 260, y: p.y },
+      data: {
+        label: "Router",
+        meta: {
+          tool: tool.id,
+          router: true,
+          branches: [],  // prepare for IF/ELSE structure
+        },
+      },
+    };
+
+    const newEdge = {
+      id: "e-" + nanoid(),
+      source: parentId,
+      target: newNode.id,
+    };
+
+    // normal nodes: remove previous outgoing edges
+    const cleaned = flow.elements.filter(el => el.source !== parentId);
+
+    get().updateCurrentFlowElements([...cleaned, newNode, newEdge]);
+  },
 
   createToolNodeAfter: (nodeId, tool) => {
     const { flows, currentFlowId } = get();
@@ -484,7 +519,306 @@ const useFlowsStore = create((set, get) => ({
       });
     }
     get().updateCurrentFlowElements(newElements);
-  }
+  },
+  createRouterBranch: (routerId) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find((f) => f.id === currentFlowId);
+    if (!flow) return;
+
+    // find router node
+    const router = flow.elements.find((n) => n.id === routerId);
+    if (!router) return;
+
+    const pos = router.position || { x: 0, y: 0 };
+
+    // how many branches already exist (outgoing edges)
+    const siblings = flow.elements.filter((e) => e.source === routerId).length;
+
+    // AUTO-LAYOUT: new branch appears staggered vertically
+    const newNode = {
+      id: "n-" + nanoid(),
+      type: "customPill",          // branch is a normal pill node
+      position: {
+        x: pos.x + 260,            // right of router
+        y: pos.y + 150 + siblings * 120, // each branch 120px lower
+      },
+      data: {
+        label: `Branch ${siblings + 1}`,
+        meta: {
+          routerBranch: true,
+        },
+      },
+    };
+
+    // Create new edge (router → branch)
+    const newEdge = {
+      id: "e-" + nanoid(),
+      source: routerId,
+      target: newNode.id,
+    };
+
+    // IMPORTANT: Unlike normal nodes, router keeps existing branches
+    const updated = [...flow.elements, newNode, newEdge];
+
+    get().updateCurrentFlowElements(updated);
+  },
+  addConditionRule: (nodeId) => {
+
+    const { flows, currentFlowId } = get();
+    const flow = flows.find(f => f.id === currentFlowId);
+    if (!flow) return;
+
+    const node = flow.elements.find(n => n.id === nodeId);
+    if (!node) return;
+
+    const rule = { id: "cond-" + nanoid(), label: "Untitled Condition" };
+    node.data.meta.conditions = [...(node.data.meta.conditions || []), rule];
+
+    const ruleIndex = node.data.meta.conditions.length - 1;
+
+    const newBranchNode = {
+      id: "n-" + nanoid(),
+      type: "customPill",
+      position: {
+        x: node.position.x + 300,
+        y: node.position.y + 100 + ruleIndex * 100
+      },
+      data: {
+        label: rule.label,
+        meta: { conditionRuleId: rule.id }
+      }
+    };
+
+    const newEdge = {
+      id: "e-" + nanoid(),
+      source: nodeId,
+      target: newBranchNode.id
+    };
+
+    get().updateCurrentFlowElements([...flow.elements, newBranchNode, newEdge]);
+  },
+
+  createConditionBranch: (conditionNodeId, ruleId) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find(f => f.id === currentFlowId);
+    if (!flow) return;
+
+    const node = flow.elements.find(n => n.id === conditionNodeId);
+    if (!node) return;
+
+    const pos = node.position;
+
+    const ruleIndex = (node.data.meta.conditions || [])
+      .findIndex(r => r.id === ruleId);
+
+    const newBranchNode = {
+      id: "n-" + nanoid(),
+      type: "customPill",
+      position: {
+        x: pos.x + 300,
+        y: pos.y + 150 + ruleIndex * 120
+      },
+      data: {
+        label: node.data.meta.conditions[ruleIndex].label,
+        meta: { conditionBranch: ruleId }
+      }
+    };
+
+    const newEdge = {
+      id: "e-" + nanoid(),
+      source: conditionNodeId,
+      target: newBranchNode.id,
+    };
+
+    get().updateCurrentFlowElements([...flow.elements, newBranchNode, newEdge]);
+  },
+  addFallbackBranch: (conditionNodeId) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find(f => f.id === currentFlowId);
+    if (!flow) return;
+
+    const node = flow.elements.find(n => n.id === conditionNodeId);
+    if (!node) return;
+
+    const pos = node.position;
+
+    const fallbackNode = {
+      id: "n-" + nanoid(),
+      type: "customPill",
+      position: {
+        x: pos.x + 300,
+        y: pos.y + 150 + (node.data.meta.conditions?.length || 0) * 120
+      },
+      data: {
+        label: "No Condition Matched",
+        meta: { fallback: true }
+      }
+    };
+
+    const fallbackEdge = {
+      id: "e-" + nanoid(),
+      source: conditionNodeId,
+      target: fallbackNode.id,
+    };
+
+    node.data.meta.fallback = true;
+
+    get().updateCurrentFlowElements([...flow.elements, fallbackNode, fallbackEdge]);
+  },
+  createConditionNodeAfter: (parentId, tool) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find((f) => f.id === currentFlowId);
+    if (!flow) return;
+
+    const parent = flow.elements.find((n) => n.id === parentId);
+    if (!parent) return;
+
+    const p = parent.position;
+
+    const newNode = {
+      id: "n-" + nanoid(),
+      type: "tool_condition",
+      position: { x: p.x + 260, y: p.y },
+      data: {
+        label: "Conditions",
+        meta: {
+          type: "tool_condition",
+          tool: tool.id,
+          conditions: [],       // rules empty initially
+          fallback: false
+        }
+      }
+    };
+
+    const newEdge = {
+      id: "e-" + nanoid(),
+      source: parentId,
+      target: newNode.id
+    };
+
+    const cleaned = flow.elements.filter(el => el.source !== parentId);
+
+    get().updateCurrentFlowElements([...cleaned, newNode, newEdge]);
+  },
+  convertNodeToRouter: (nodeId, tool) => {
+    get().updateNodeById(nodeId, {
+      data: {
+        label: "Router",
+        meta: {
+          router: true,
+          branches: []
+        }
+      },
+      type: "tool_router"
+    });
+  },
+  convertNodeToCondition: (nodeId, tool) => {
+    get().updateNodeById(nodeId, {
+      data: {
+        label: "Conditions",
+        meta: {
+          conditions: [],
+          fallback: false
+        }
+      },
+      type: "tool_condition"
+    });
+  },
+
+  convertNodeToTool: (nodeId, tool) => {
+    get().updateNodeById(nodeId, {
+      data: {
+        label: tool.name,
+        meta: { tool: tool.id }
+      },
+      type: "customPill"
+    });
+  },
+  addConditionFallback: (nodeId) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find(f => f.id === currentFlowId);
+    if (!flow) return;
+
+    const node = flow.elements.find(n => n.id === nodeId);
+    if (!node) return;
+
+    node.data.meta.fallback = true;
+
+    const count = node.data.meta.conditions?.length || 0;
+
+    const newFallbackNode = {
+      id: "n-" + nanoid(),
+      type: "customPill",
+      position: {
+        x: node.position.x + 300,
+        y: node.position.y + 100 + count * 100
+      },
+      data: { label: "No Condition Matched", meta: { fallback: true } }
+    };
+
+    const newEdge = {
+      id: "e-" + nanoid(),
+      source: nodeId,
+      target: newFallbackNode.id
+    };
+
+    get().updateCurrentFlowElements([...flow.elements, newFallbackNode, newEdge]);
+  },
+  addNodeUnderConditionRule: (conditionNodeId, ruleId) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find(f => f.id === currentFlowId);
+    if (!flow) return;
+
+
+    const branchNode = flow.elements.find(n => n.data?.meta?.conditionRuleId === ruleId);
+    if (!branchNode) return;
+
+
+    // Simulate clicking "+"
+    window.dispatchEvent(
+      new CustomEvent("wpaf:add-node-after", {
+        detail: { parentId: branchNode.id }
+      })
+    );
+  },
+
+  deleteConditionRule: (nodeId, ruleId) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find(f => f.id === currentFlowId);
+    if (!flow) return;
+
+    // find the condition node
+    const condNode = flow.elements.find(n => n.id === nodeId);
+    if (!condNode) return;
+
+    // Remove rule from the meta
+    condNode.data.meta.conditions = (condNode.data.meta.conditions || []).filter(r => r.id !== ruleId);
+
+    // find the branch node that was created for this rule (if any)
+    const branchNode = flow.elements.find(n => n.data?.meta?.conditionRuleId === ruleId);
+
+    // Build new elements filtering out branch node and any edges to/from it
+    const filtered = flow.elements.filter(el => {
+      // remove the branch node itself
+      if (branchNode && el.id === branchNode.id) return false;
+
+      // remove edges that reference the branch node (either as source or target)
+      if (branchNode && (el.source === branchNode.id || el.target === branchNode.id)) return false;
+
+      return true;
+    });
+
+    // Update the flow with modified condition node and without branch node/edges
+    // Ensure we replace the condition node instance inside filtered array
+    const final = filtered.map(el => (el.id === condNode.id ? condNode : el));
+
+    get().updateCurrentFlowElements(final);
+  },
+
+
+
+
+
 }));
 
 export default useFlowsStore;

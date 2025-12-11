@@ -71,6 +71,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const addBranch = (e) => {
+      const routerId = e.detail.routerId;
+      const store = useFlowsStore.getState();
+      store.createRouterBranch(routerId);
+    };
+
+    window.addEventListener("router:add-branch", addBranch);
+    return () => window.removeEventListener("router:add-branch", addBranch);
+  }, []);
+
+
+  useEffect(() => {
 
     const addNodeAfter = (e) => {
       const parentId = e.detail.parentId;
@@ -85,6 +97,46 @@ export default function App() {
     return () => window.removeEventListener("wpaf:add-node-after", addNodeAfter);
 
   }, []);
+
+  // add this single useEffect for condition events
+  useEffect(() => {
+    const store = useFlowsStore.getState();
+
+    const onAddRule = (e) => {
+      // ConditionNode dispatches { detail: { nodeId } }
+      store.addConditionRule(e.detail.nodeId);
+    };
+
+    const onDeleteRule = (e) => {
+      // ConditionNode dispatches { detail: { nodeId, ruleId } }
+      store.deleteConditionRule(e.detail.nodeId, e.detail.ruleId);
+    };
+
+    const onAddNodeUnderRule = (e) => {
+      // ConditionNode dispatches { detail: { conditionNodeId, ruleId } }
+      store.addNodeUnderConditionRule(e.detail.conditionNodeId, e.detail.ruleId);
+    };
+
+    const onAddFallback = (e) => {
+      // ConditionNode dispatches { detail: { nodeId } }
+      store.addConditionFallback(e.detail.nodeId);
+    };
+
+    window.addEventListener("condition:add-rule", onAddRule);
+    window.addEventListener("condition:delete-rule", onDeleteRule);
+    window.addEventListener("condition:add-node-under-rule", onAddNodeUnderRule);
+    window.addEventListener("condition:add-fallback", onAddFallback);
+
+    return () => {
+      window.removeEventListener("condition:add-rule", onAddRule);
+      window.removeEventListener("condition:delete-rule", onDeleteRule);
+      window.removeEventListener("condition:add-node-under-rule", onAddNodeUnderRule);
+      window.removeEventListener("condition:add-fallback", onAddFallback);
+    };
+  }, []);
+
+
+
 
   if (!ready) return <div>Loading…</div>;
 
