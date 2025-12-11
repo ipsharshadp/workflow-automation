@@ -4,6 +4,7 @@ import apps from "../../data/apps";
 import tools from "../../data/tools";
 import ListGroup from 'react-bootstrap/ListGroup';
 import useFlowsStore from "../../store/useFlowsStore";
+import { nanoid } from "nanoid";
 
 export default function ActionPickerModal({ show, onHide, nodeId }) {
     console.log("ActionPickerModal", show, onHide, nodeId);
@@ -42,6 +43,49 @@ export default function ActionPickerModal({ show, onHide, nodeId }) {
 
         const isApp = action.category === "app" || action.type === "app";
         const isTool = action.category === "tool" || action.type === "router" || action.type === "condition";
+        console.log("window._addingNewNode", window._addingNewNode);
+
+        if (window._addingConditionRule) {
+            const { conditionNodeId, ruleId } = window._addingConditionRule;
+            window._addingConditionRule = null;
+
+            const store = useFlowsStore.getState();
+            const flow = store.getCurrentFlow();
+            const condNode = flow.elements.find(n => n.id === conditionNodeId);
+
+            if (!condNode) return;
+
+            // create final node positioned correctly
+            const newNodeId = "n-" + nanoid();
+            const newNode = {
+                id: newNodeId,
+                type: "customPill",
+                position: {
+                    x: condNode.position.x + 300,
+                    y: condNode.position.y + 150
+                },
+                data: {
+                    label: action.name,
+                    meta: { tool: action.id }
+                }
+            };
+
+            const newEdge = {
+                id: "e-" + nanoid(),
+                source: conditionNodeId,
+                sourceHandle: `rule-${ruleId}`,  // important
+                target: newNodeId
+            };
+
+            store.updateCurrentFlowElements([
+                ...flow.elements,
+                newNode,
+                newEdge
+            ]);
+
+            onHide();
+            return;
+        }
 
         // ⭐ CASE 1: User is adding a NEW node after current node
         if (window._addingNewNode) {

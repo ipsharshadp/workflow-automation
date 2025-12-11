@@ -317,3 +317,16 @@
   color: #333;
   padding-top: 8px;
 }
+
+.cond-handle {
+  background: #000 !important;
+  width: 10px !important;
+  height: 10px !important;
+  right: -8px !important;
+}
+
+.condition-row {
+  position: relative;
+  padding-right: 14px;
+  /* space for the dot */
+}

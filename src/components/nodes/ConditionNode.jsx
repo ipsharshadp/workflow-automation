@@ -38,8 +38,11 @@ export default function ConditionNode({ id, data }) {
     };
 
     return (
-        <div className="condition-card" onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-
+        <div
+            className="condition-card"
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+        >
             {/* HEADER */}
             <div className="condition-header">
                 <div className="condition-icon">🌐</div>
@@ -52,20 +55,27 @@ export default function ConditionNode({ id, data }) {
                 )}
             </div>
 
-            {/* CONDITION LIST */}
             <div className="condition-body">
 
                 {rules.map((rule, index) => (
                     <div key={rule.id} className="condition-row">
 
-                        {/* Condition Label Row */}
+                        {/* Label */}
                         <div className="condition-label-box">
-                            <span className="condition-index">{index + 1}.</span>
-                            <span>{rule.label}</span>
+                            {index + 1}. {rule.label}
                         </div>
 
-                        {/* Create node under this condition */}
-                        <button className="condition-plus" onClick={() => addNodeUnderRule(rule.id)}>
+                        {/* Add node under rule */}
+                        <button
+                            className="condition-plus"
+                            onClick={() =>
+                                window.dispatchEvent(
+                                    new CustomEvent("condition:add-node-under-rule", {
+                                        detail: { conditionNodeId: id, ruleId: rule.id }
+                                    })
+                                )
+                            }
+                        >
                             <FiPlus size={14} />
                         </button>
 
@@ -74,17 +84,12 @@ export default function ConditionNode({ id, data }) {
                             <FiTrash2 size={14} />
                         </button>
 
-                        {/* Outgoing handle for branch */}
+                        {/* Auto-positioned handle (NO manual top) */}
                         <Handle
                             type="source"
                             id={`rule-${rule.id}`}
                             position={Position.Right}
-                            style={{
-                                top: 65 + index * 45,
-                                background: "#000",
-                                width: 10,
-                                height: 10
-                            }}
+                            className="cond-handle"
                         />
                     </div>
                 ))}
@@ -96,18 +101,14 @@ export default function ConditionNode({ id, data }) {
 
                 {/* Fallback */}
                 {hasFallback ? (
-                    <div className="condition-fallback-row">
-                        No Condition Matched
+                    <div className="condition-row">
+                        <div className="condition-label-box">No Condition Matched</div>
+
                         <Handle
                             type="source"
                             id="fallback"
                             position={Position.Right}
-                            style={{
-                                top: 65 + rules.length * 45 + 20,
-                                background: "#000",
-                                width: 10,
-                                height: 10
-                            }}
+                            className="cond-handle"
                         />
                     </div>
                 ) : (
@@ -115,9 +116,10 @@ export default function ConditionNode({ id, data }) {
                         Add “No Condition Matched”
                     </div>
                 )}
+
             </div>
 
-            {/* Incoming handle */}
+            {/* Incoming */}
             <Handle type="target" position={Position.Left} />
         </div>
     );

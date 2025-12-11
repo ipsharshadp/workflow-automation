@@ -19,8 +19,10 @@ const createDefaultFlow = () => ({
   createdAt: Date.now(),
 });
 
-const sortNodes = (nodes) =>
-  nodes.slice().sort((a, b) => (a.position?.y || 0) - (b.position?.y || 0));
+// const sortNodes = (nodes) =>
+//   nodes.slice().sort((a, b) => (a.position?.y || 0) - (b.position?.y || 0));
+
+const sortNodes = (nodes) => nodes;
 
 const separate = (elements) => {
   const nodes = elements.filter((e) => e.data);
@@ -562,8 +564,8 @@ const useFlowsStore = create((set, get) => ({
 
     get().updateCurrentFlowElements(updated);
   },
-  addConditionRule: (nodeId) => {
 
+  addConditionRule: (nodeId) => {
     const { flows, currentFlowId } = get();
     const flow = flows.find(f => f.id === currentFlowId);
     if (!flow) return;
@@ -571,33 +573,47 @@ const useFlowsStore = create((set, get) => ({
     const node = flow.elements.find(n => n.id === nodeId);
     if (!node) return;
 
+    // 1) create rule
     const rule = { id: "cond-" + nanoid(), label: "Untitled Condition" };
-    node.data.meta.conditions = [...(node.data.meta.conditions || []), rule];
 
-    const ruleIndex = node.data.meta.conditions.length - 1;
+    // 2) determine index for positioning
+    const existingRules = node.data.meta.conditions || [];
+    const ruleIndex = existingRules.length;
 
+    // 3) create branch node
     const newBranchNode = {
       id: "n-" + nanoid(),
       type: "customPill",
       position: {
         x: node.position.x + 300,
-        y: node.position.y + 100 + ruleIndex * 100
+        y: node.position.y + 100 + ruleIndex * 100,
       },
       data: {
         label: rule.label,
-        meta: { conditionRuleId: rule.id }
-      }
+        meta: { conditionRuleId: rule.id },
+      },
     };
 
+    // 4) set branch id on rule (so UI can reference it directly later)
+    rule.branchNodeId = newBranchNode.id;
+
+    // 5) push rule into condition node meta (after branch id assigned)
+    node.data.meta.conditions = [...existingRules, rule];
+
+    // 6) create edge FROM specific handle on condition node → branch node
     const newEdge = {
       id: "e-" + nanoid(),
       source: nodeId,
-      target: newBranchNode.id
+      sourceHandle: `rule-${rule.id}`, // <--- IMPORTANT: attach to the rule handle
+      target: newBranchNode.id,
     };
 
+    // 7) persist
     get().updateCurrentFlowElements([...flow.elements, newBranchNode, newEdge]);
   },
 
+
+  // in useFlowsStore.js — replace createConditionBranch
   createConditionBranch: (conditionNodeId, ruleId) => {
     const { flows, currentFlowId } = get();
     const flow = flows.find(f => f.id === currentFlowId);
@@ -608,30 +624,31 @@ const useFlowsStore = create((set, get) => ({
 
     const pos = node.position;
 
-    const ruleIndex = (node.data.meta.conditions || [])
-      .findIndex(r => r.id === ruleId);
+    const ruleIndex = (node.data.meta.conditions || []).findIndex(r => r.id === ruleId);
 
     const newBranchNode = {
       id: "n-" + nanoid(),
       type: "customPill",
       position: {
         x: pos.x + 300,
-        y: pos.y + 150 + ruleIndex * 120
+        y: pos.y + 150 + (ruleIndex >= 0 ? ruleIndex * 120 : 0),
       },
       data: {
-        label: node.data.meta.conditions[ruleIndex].label,
-        meta: { conditionBranch: ruleId }
-      }
+        label: node.data.meta.conditions[ruleIndex]?.label || "Condition Output",
+        meta: { conditionRuleId: ruleId },
+      },
     };
 
     const newEdge = {
       id: "e-" + nanoid(),
       source: conditionNodeId,
+      sourceHandle: `rule-${ruleId}`, // <-- important
       target: newBranchNode.id,
     };
 
     get().updateCurrentFlowElements([...flow.elements, newBranchNode, newEdge]);
   },
+
   addFallbackBranch: (conditionNodeId) => {
     const { flows, currentFlowId } = get();
     const flow = flows.find(f => f.id === currentFlowId);
@@ -764,23 +781,70 @@ const useFlowsStore = create((set, get) => ({
 
     get().updateCurrentFlowElements([...flow.elements, newFallbackNode, newEdge]);
   },
+  // in useFlowsStore.js — replace addNodeUnderConditionRule
+  // addNodeUnderConditionRule: (conditionNodeId, ruleId) => {
+  //   const { flows, currentFlowId } = get();
+  //   const flow = flows.find(f => f.id === currentFlowId);
+  //   if (!flow) return;
+
+  //   // find existing branch node that was created for this rule
+  //   let branchNode = flow.elements.find(n => n.data?.meta?.conditionRuleId === ruleId);
+
+  //   // if not present, create it (auto-create on first "+")
+  //   if (!branchNode) {
+  //     const condNode = flow.elements.find(n => n.id === conditionNodeId);
+  //     if (!condNode) return;
+
+  //     // compute the rule index (if possible) for vertical placement
+  //     const ruleIndex = (condNode.data.meta.conditions || []).findIndex(r => r.id === ruleId);
+  //     const yOffset = ruleIndex >= 0 ? 120 + ruleIndex * 120 : 120;
+
+  //     branchNode = {
+  //       id: "n-" + nanoid(),
+  //       type: "customPill",
+  //       position: {
+  //         x: condNode.position.x + 300,
+  //         y: condNode.position.y + yOffset,
+  //       },
+  //       data: {
+  //         label: "Condition Output",
+  //         meta: { conditionRuleId: ruleId },
+  //       },
+  //     };
+
+  //     const newEdge = {
+  //       id: "e-" + nanoid(),
+  //       source: conditionNodeId,
+  //       sourceHandle: `rule-${ruleId}`, // <-- attach to correct handle
+  //       target: branchNode.id,
+  //     };
+
+  //     get().updateCurrentFlowElements([...flow.elements, branchNode, newEdge]);
+
+  //     // refresh local reference after persist (not strictly necessary here, but safe)
+  //     const updatedFlow = get().getCurrentFlow();
+  //     branchNode = updatedFlow.elements.find(n => n.id === branchNode.id);
+  //   }
+
+  //   // now open the action picker to add node AFTER the branch node
+  //   window.dispatchEvent(
+  //     new CustomEvent("wpaf:add-node-after", {
+  //       detail: { parentId: branchNode.id },
+  //     })
+  //   );
+  // },
   addNodeUnderConditionRule: (conditionNodeId, ruleId) => {
-    const { flows, currentFlowId } = get();
-    const flow = flows.find(f => f.id === currentFlowId);
-    if (!flow) return;
+    // just open the picker for this condition rule
+    window._addingConditionRule = { conditionNodeId, ruleId };
 
-
-    const branchNode = flow.elements.find(n => n.data?.meta?.conditionRuleId === ruleId);
-    if (!branchNode) return;
-
-
-    // Simulate clicking "+"
     window.dispatchEvent(
-      new CustomEvent("wpaf:add-node-after", {
-        detail: { parentId: branchNode.id }
+      new CustomEvent("wpaf:open-action-picker", {
+        detail: { nodeId: conditionNodeId }
       })
     );
   },
+
+
 
   deleteConditionRule: (nodeId, ruleId) => {
     const { flows, currentFlowId } = get();
