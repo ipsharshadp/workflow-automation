@@ -18,21 +18,25 @@ const apps = [
         id: "email",
         name: "Email",
         icon: MdEmail,
+        type: "app  "
     },
     {
         id: "notification",
         name: "Notification",
         icon: MdNotificationsNone,
+        type: "app"
     },
     {
         id: "mailchimp",
         name: "Mailchimp",
         icon: MdOutlineMail,
+        type: "app"
     },
     {
         id: "webhook",
         name: "Webhook",
         icon: TbWebhook,
+        type: "app"
     },
 
 ];

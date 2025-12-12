@@ -10,6 +10,7 @@ import ReactFlow, {
   SmoothStepEdge
 } from "reactflow";
 import "reactflow/dist/style.css";
+import { onSelectAction } from "../utils/Helper";
 
 import useFlowsStore from "../store/useFlowsStore";
 import PillNode from "./nodes/PillNode";
@@ -162,6 +163,11 @@ export default function CanvasArea() {
   const onDrop = useCallback(
     (e) => {
       e.preventDefault();
+      if (window._droppedInsidePlaceholder) {
+        window._droppedInsidePlaceholder = false;
+        return;
+      }
+
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
 
       // read both possible data types
@@ -171,8 +177,16 @@ export default function CanvasArea() {
       const raw = e.dataTransfer.getData("application/json");
 
       let payload = null;
+
+      const position = {
+        x: e.clientX - bounds.left - 80,
+        y: e.clientY - bounds.top,
+      };
+
       if (appRaw) {
-        try { payload = { type: "app", data: JSON.parse(appRaw) }; } catch (e) { payload = { type: "app", data: { id: appRaw } } }
+        // try { payload = { type: "app", data: JSON.parse(appRaw) }; } catch (e) { payload = { type: "app", data: { id: appRaw } } }
+        // return
+        payload = { type: "app", data: JSON.parse(appRaw) }
       } else if (toolRaw) {
         try { payload = { type: "tool", data: JSON.parse(toolRaw) }; } catch (e) { payload = { type: "tool", data: { id: toolRaw } } }
       } else if (raw) {
@@ -183,11 +197,7 @@ export default function CanvasArea() {
 
       if (!payload) return;
 
-      const position = {
-        x: e.clientX - bounds.left - 80,
-        y: e.clientY - bounds.top,
-      };
-
+      console.log("payload onDrop canvas", payload);
       const id = "n-" + Date.now();
 
       // If it's an app → create a normal pill

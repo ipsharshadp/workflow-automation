@@ -39,68 +39,81 @@ export default function ConditionNode({ id, data }) {
 
     return (
         <div
-            className="condition-card"
+            className="condition-card card"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
         >
             {/* HEADER */}
-            <div className="condition-header">
-                <div className="condition-icon">🌐</div>
-                <div className="condition-title">Conditions / Filters</div>
+            <div className="condition-header card-header">
+                <div className="row">
+                    <div className="col-10">
+                        <div className="condition-title">Conditions</div>
+                    </div>
+                    <div className="col-2">
 
-                {hover && (
+                        <div className="condition-gear text-danger" onClick={openDrawer}>
+                            <FiTrash2 size={18} />
+                        </div>
+
+                    </div>
+                </div>
+
+                {/* {hover && (
                     <div className="condition-gear" onClick={openDrawer}>
                         <FiSettings size={18} />
                     </div>
-                )}
+                )} */}
             </div>
 
-            <div className="condition-body">
+            <div className="condition-body card-body">
 
                 {rules.map((rule, index) => (
-                    <div key={rule.id} className="condition-row">
+                    <div key={rule.id} className="condition-row row">
 
                         {/* Label */}
-                        <div className="condition-label-box">
+                        <div className="condition-label-box col-8">
                             {index + 1}. {rule.label}
                         </div>
 
                         {/* Add node under rule */}
-                        <button
-                            className="condition-plus"
-                            onClick={() =>
-                                window.dispatchEvent(
-                                    new CustomEvent("condition:add-node-under-rule", {
-                                        detail: { conditionNodeId: id, ruleId: rule.id }
-                                    })
-                                )
-                            }
-                        >
-                            <FiPlus size={14} />
-                        </button>
+                        <div className="col-4 d-flex">
+                            <button
+                                className=" btn btn-outline-primary btn-sm me-1"
+                                onClick={() =>
+                                    window.dispatchEvent(
+                                        new CustomEvent("condition:add-node-under-rule", {
+                                            detail: { conditionNodeId: id, ruleId: rule.id }
+                                        })
+                                    )
+                                }
+                            >
+                                <FiPlus size={14} />
+                            </button>
 
-                        {/* Delete rule */}
-                        <button className="condition-delete" onClick={() => deleteRule(rule.id)}>
-                            <FiTrash2 size={14} />
-                        </button>
+
+                            {/* Delete rule */}
+                            <button className=" btn btn-outline-danger btn-sm" onClick={() => deleteRule(rule.id)}>
+                                <FiTrash2 size={14} />
+                            </button>
+                        </div>
 
                         {/* Auto-positioned handle (NO manual top) */}
                         <Handle
                             type="source"
                             id={`rule-${rule.id}`}
                             position={Position.Right}
-                            className="cond-handle"
+                            className="cond-handle p-0"
                         />
                     </div>
                 ))}
 
                 {/* Add new condition */}
-                <div className="condition-add-row" onClick={addRule}>
+                <div className=" btn btn-primary btn-sm mt-2" onClick={addRule}>
                     <FiPlus size={14} /> Add Condition
                 </div>
 
                 {/* Fallback */}
-                {hasFallback ? (
+                {/* {hasFallback ? (
                     <div className="condition-row">
                         <div className="condition-label-box">No Condition Matched</div>
 
@@ -115,12 +128,12 @@ export default function ConditionNode({ id, data }) {
                     <div className="condition-add-row" onClick={addFallback}>
                         Add “No Condition Matched”
                     </div>
-                )}
+                )} */}
 
             </div>
 
             {/* Incoming */}
-            <Handle type="target" position={Position.Left} />
+            < Handle type="target" position={Position.Left} />
         </div>
     );
 }

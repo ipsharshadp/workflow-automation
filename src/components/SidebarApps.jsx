@@ -40,6 +40,7 @@ const Sidebar = () => {
 
             {/* DRAG HANDLE UI (just visual, optional) */}
             <div
+              className='drag-handle'
               draggable={true}
               onDragStart={(e) => {
                 e.dataTransfer.setData("application/x-app", JSON.stringify(app));

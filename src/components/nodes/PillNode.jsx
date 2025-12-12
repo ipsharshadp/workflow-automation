@@ -3,6 +3,7 @@ import { Handle, Position } from "reactflow";
 import { FiPlus, FiTrash2, FiSettings } from "react-icons/fi";
 import { Dropdown } from "react-bootstrap";
 import useFlowsStore from "../../store/useFlowsStore";
+import { onSelectAction } from "../../utils/Helper";
 
 export default function PillNode({ id, data }) {
     const [hover, setHover] = useState(false);
@@ -11,15 +12,22 @@ export default function PillNode({ id, data }) {
     const meta = data?.meta || {};
     const isFirstNode = meta.isFirstNode || false;
 
+
+
     // Subscribe ONLY to hasChild (this triggers correct re-render after delete or add)
     const hasChild = useFlowsStore((state) => {
         const f = state.getCurrentFlow();
         if (!f?.elements) return false;
         return f.elements.some((el) => el.source === id);
     });
-    console.log("hasChild", hasChild);
-    console.log("data", data);
-    console.log("id", id);
+
+    console.log("isFirstNode", isFirstNode)
+    console.log("data", data)
+    console.log("hasChild", hasChild)
+    if (isFirstNode && data.label === "Select an app" && !hasChild) {
+        window._addingNewNode = true;
+    }
+
 
     const showNext = !hasChild;
 
@@ -50,6 +58,7 @@ export default function PillNode({ id, data }) {
         );
     };
 
+
     return (
         <div
             className="pill-node"
@@ -58,11 +67,12 @@ export default function PillNode({ id, data }) {
         >
             <div className="pill-container">
                 {/* LEFT ICON (settings or add app) */}
-                {!isFirstNode && (
+                {isFirstNode && data.label === "Select an app" && !hasChild && (
                     <div className="pill-left" onClick={openPicker}>
                         {hasAction ? <FiSettings size={20} /> : <FiPlus size={22} />}
                     </div>
                 )}
+
 
                 {/* LABEL */}
                 <div className="pill-text">{data?.label || "Start"}</div>
@@ -98,7 +108,7 @@ export default function PillNode({ id, data }) {
                 <div className="pill-next">
                     <div className="pill-dash"></div>
 
-                    <div
+                    {/* <div
                         className={"pill-next-box" + (dropHover ? " drop-hover" : "")}
                         onClick={addAfter}
                         onDragOver={(e) => {
@@ -144,6 +154,43 @@ export default function PillNode({ id, data }) {
                                     detail: { parentId: id, payload },
                                 })
                             );
+                        }}
+                    >
+                        +
+                    </div> */}
+
+                    <div
+                        className={"pill-next-box" + (dropHover ? " drop-hover" : "")}
+                        onClick={addAfter}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "copy";
+                        }}
+                        onDragEnter={() => setDropHover(true)}
+                        onDragLeave={() => setDropHover(false)}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setDropHover(false);
+                            // console.log("adasdsa", e);
+                            const appRaw = e.dataTransfer.getData("application/x-app");
+                            const toolRaw = e.dataTransfer.getData("application/x-tool");
+
+                            let payload = null;
+                            if (appRaw) payload = JSON.parse(appRaw);
+                            if (toolRaw) payload = JSON.parse(toolRaw);
+
+                            if (!payload) return;
+                            window._addingNewNode = true;
+                            window._droppedInsidePlaceholder = true;
+                            onSelectAction(payload, id, data);
+                            // console.log("payload", payload);
+                            // addAfter()
+
+                            // window.dispatchEvent(
+                            //     new CustomEvent("wpaf:drop-on-node", {
+                            //         detail: { parentId: id, payload },
+                            //     })
+                            // );
                         }}
                     >
                         +

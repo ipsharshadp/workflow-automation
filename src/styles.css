@@ -268,15 +268,7 @@
   cursor: pointer;
 }
 
-
-.condition-card {
-  background: #fff;
-  border: 2px solid #1B254B;
-  border-radius: 16px;
-  padding: 15px;
-  width: 260px;
-}
-
+/* 
 .condition-header {
   display: flex;
   align-items: center;
@@ -300,7 +292,7 @@
   align-items: center;
   gap: 6px;
   position: relative;
-}
+} */
 
 .condition-label-box {
   padding: 4px 8px;
@@ -348,4 +340,15 @@
   transform: scale(1.05);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   background: #f4f4ff;
+}
+
+.drag-handle {
+  width: 28px;
+  height: 28px;
+  border: 1px dashed #aaa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: grab;
 }

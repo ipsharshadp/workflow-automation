@@ -43,7 +43,11 @@ export default function ActionPickerModal({ show, onHide, nodeId }) {
 
         const isApp = action.category === "app" || action.type === "app";
         const isTool = action.category === "tool" || action.type === "router" || action.type === "condition";
-        console.log("window._addingNewNode", window._addingNewNode);
+        const type = action.type || action.category || "unknown";
+        console.log("window._addingNewNode", window._addingNewNode)
+        console.log("type", type)
+        console.log("action", action)
+        console.log("isApp", isApp)
 
         if (window._addingConditionRule) {
             const { conditionNodeId, ruleId } = window._addingConditionRule;
