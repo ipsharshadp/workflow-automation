@@ -13,7 +13,7 @@ const createDefaultFlow = () => ({
       id: "n-" + nanoid(),
       type: "customPill",
       position: { x: 220, y: 180 },
-      data: { label: "Select an app", meta: { isTrigger: true, isFirstNode: true } },
+      data: { label: "Start", meta: { isTrigger: true, isFirstNode: true } },
     },
   ],
   createdAt: Date.now(),

@@ -6,6 +6,7 @@ import useFlowsStore from "../../store/useFlowsStore";
 
 export default function PillNode({ id, data }) {
     const [hover, setHover] = useState(false);
+    const [dropHover, setDropHover] = useState(false);
 
     const meta = data?.meta || {};
     const isFirstNode = meta.isFirstNode || false;
@@ -57,27 +58,30 @@ export default function PillNode({ id, data }) {
         >
             <div className="pill-container">
                 {/* LEFT ICON (settings or add app) */}
-                <div className="pill-left" onClick={openPicker}>
-                    {hasAction ? <FiSettings size={20} /> : <FiPlus size={22} />}
-                </div>
+                {!isFirstNode && (
+                    <div className="pill-left" onClick={openPicker}>
+                        {hasAction ? <FiSettings size={20} /> : <FiPlus size={22} />}
+                    </div>
+                )}
 
                 {/* LABEL */}
-                <div className="pill-text">{data?.label || "Select App"}</div>
+                <div className="pill-text">{data?.label || "Start"}</div>
 
-                {/* NODE MENU (edit + delete) */}
-                <div className="node-menu">
-                    <Dropdown>
-                        <Dropdown.Toggle variant="light" size="sm">
-                            ⋮
-                        </Dropdown.Toggle>
-                        <Dropdown.Menu>
-                            <Dropdown.Item onClick={openPicker}>Edit</Dropdown.Item>
-                            <Dropdown.Item onClick={deleteNode} className="text-danger">
-                                Delete
-                            </Dropdown.Item>
-                        </Dropdown.Menu>
-                    </Dropdown>
-                </div>
+                {!isFirstNode && (
+                    <div className="node-menu">
+                        <Dropdown>
+                            <Dropdown.Toggle variant="light" size="sm">
+                                ⋮
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu>
+                                <Dropdown.Item onClick={openPicker}>Edit</Dropdown.Item>
+                                <Dropdown.Item onClick={deleteNode} className="text-danger">
+                                    Delete
+                                </Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    </div>
+                )}
 
                 <Handle type="source" position={Position.Right} />
                 <Handle type="target" position={Position.Left} />
@@ -85,13 +89,70 @@ export default function PillNode({ id, data }) {
 
             {/* PLUS ONLY FOR LAST NODE */}
             {showNext && (
+                // <div className="pill-next">
+                //     <div className="pill-dash"></div>
+                //     <div className="pill-next-box" onClick={addAfter}>
+                //         +
+                //     </div>
+                // </div>
                 <div className="pill-next">
                     <div className="pill-dash"></div>
-                    <div className="pill-next-box" onClick={addAfter}>
+
+                    <div
+                        className={"pill-next-box" + (dropHover ? " drop-hover" : "")}
+                        onClick={addAfter}
+                        onDragOver={(e) => {
+                            // must preventDefault to allow drop
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "copy";
+                        }}
+                        onDragEnter={(e) => {
+                            e.preventDefault();
+                            setDropHover(true);
+                        }}
+                        onDragLeave={() => setDropHover(false)}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setDropHover(false);
+
+                            const appRaw = e.dataTransfer.getData("application/x-app");
+                            const toolRaw = e.dataTransfer.getData("application/x-tool");
+                            let payload = null;
+
+                            if (appRaw) {
+                                try {
+                                    payload = { type: "app", data: JSON.parse(appRaw) };
+                                } catch (err) {
+                                    payload = { type: "app", data: { id: appRaw } };
+                                }
+                            } else if (toolRaw) {
+                                try {
+                                    payload = { type: "tool", data: JSON.parse(toolRaw) };
+                                } catch (err) {
+                                    payload = { type: "tool", data: { id: toolRaw } };
+                                }
+                            } else {
+                                // fallback: try text/plain
+                                const fallback = e.dataTransfer.getData("text/plain");
+                                if (fallback) payload = { type: "unknown", data: { id: fallback } };
+                            }
+
+                            if (!payload) return;
+
+                            window.dispatchEvent(
+                                new CustomEvent("wpaf:drop-on-node", {
+                                    detail: { parentId: id, payload },
+                                })
+                            );
+                        }}
+                    >
                         +
                     </div>
                 </div>
             )}
+
+
+
 
             {/* DELETE ICON (not for first node) */}
             {!isFirstNode && (

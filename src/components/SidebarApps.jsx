@@ -1,41 +1,97 @@
 import React from 'react';
 import { Container, Row, Col, ListGroup, Nav, Button } from 'react-bootstrap';
+import apps from "../data/apps";
+import tools from "../data/tools";
+
 
 const Sidebar = () => {
+  const onDragStartApp = (e, app) => {
+    // ensure both a custom mime-type and fallback text are set
+    e.dataTransfer.setData('application/x-app', JSON.stringify(app));
+    e.dataTransfer.setData('text/plain', app.id || app.name || 'app');
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const onDragStartTool = (e, tool) => {
+    e.dataTransfer.setData('application/x-tool', JSON.stringify(tool));
+    e.dataTransfer.setData('text/plain', tool.id || tool.name || 'tool');
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
   return (
     <div className='p-3'>
       <h5 className="text-primary">Actions</h5>
       <ListGroup >
-        <ListGroup.Item>
-          Email
-        </ListGroup.Item>
-        <ListGroup.Item>
-          SMS
-        </ListGroup.Item>
-        <ListGroup.Item>
-          Update Profile Property
-        </ListGroup.Item>
-        <ListGroup.Item>
-          Notification
-        </ListGroup.Item>
-        <ListGroup.Item>
-          Webhook
-        </ListGroup.Item>
+        {apps.map(app => (
+          <ListGroup.Item key={app.id} className="d-flex align-items-center justify-content-between">
+
+            {/* FULL ROW DRAGGABLE */}
+            <div
+              draggable={true}
+              onDragStart={(e) => {
+                e.dataTransfer.setData("application/x-app", JSON.stringify(app));
+                e.dataTransfer.effectAllowed = "copy";
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", cursor: "grab" }}
+            >
+              {app.icon ? <app.icon size={20} /> : null}
+              <span>{app.name}</span>
+            </div>
+
+            {/* DRAG HANDLE UI (just visual, optional) */}
+            <div
+              draggable={true}
+              onDragStart={(e) => {
+                e.dataTransfer.setData("application/x-app", JSON.stringify(app));
+                e.dataTransfer.effectAllowed = "copy";
+              }}
+              style={{
+                width: 30,
+                height: 30,
+                border: "1px dashed #999",
+                borderRadius: 6,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                cursor: "grab",
+              }}
+            >
+              ⋮⋮
+            </div>
+
+          </ListGroup.Item>
+
+
+        ))}
       </ListGroup>
 
-      <h5 className="text-primary mt-4">Timing</h5>
+      <h5 className="text-primary mt-4">Tool</h5>
       <ListGroup>
+        {tools.map(tool => (
+          <ListGroup.Item key={tool.id}>
+            <div
+              draggable={true}
+              onDragStart={(e) => onDragStartTool(e, tool)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'grab' }}
+            >
+              {tool.icon ? <tool.icon size={18} /> : null}
+              <span>{tool.name}</span>
+            </div>
+          </ListGroup.Item>
+        ))}
+      </ListGroup>
+      {/* <ListGroup>
         <ListGroup.Item>
           Time Delay
         </ListGroup.Item>
-      </ListGroup>
+      </ListGroup> */}
 
-      <h5 className="text-primary mt-4">Logic</h5>
+      {/* <h5 className="text-primary mt-4">Logic</h5>
       <ListGroup>
         <ListGroup.Item>
           Conditional Split
         </ListGroup.Item>
-      </ListGroup>
+      </ListGroup> */}
     </div>
 
   );

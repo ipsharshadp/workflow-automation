@@ -135,6 +135,38 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const onDropOnNode = (e) => {
+      const { parentId, payload } = e.detail;
+      const store = useFlowsStore.getState();
+
+      if (!payload) return;
+
+      if (payload.type === "app") {
+        // create an app node after parentId (will remove parent's outgoing edge)
+        store.createToolNodeAfter(parentId, payload.data);
+        return;
+      }
+
+      if (payload.type === "tool") {
+        const tool = payload.data;
+        if (tool.type === "router") {
+          store.createRouterNodeAfter(parentId, tool);
+        } else if (tool.type === "condition") {
+          store.createConditionNodeAfter(parentId, tool);
+        } else {
+          store.createToolNodeAfter(parentId, tool);
+        }
+        return;
+      }
+
+      // fallback: create a normal pill
+      store.createToolNodeAfter(parentId, { id: payload.data.id, name: payload.data.name || payload.data.id });
+    };
+
+    window.addEventListener("wpaf:drop-on-node", onDropOnNode);
+    return () => window.removeEventListener("wpaf:drop-on-node", onDropOnNode);
+  }, []);
 
 
 
