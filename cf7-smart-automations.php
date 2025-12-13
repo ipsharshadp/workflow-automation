@@ -7,6 +7,8 @@
 
 if (!defined('ABSPATH')) exit;
 
+define('CF7SA_VERSION', '1.0.0');  
+define('CF7SA_DB_VERSION', '1.0.0');  // 🔥 DB version here
 define('CF7SA_PATH', plugin_dir_path(__FILE__));
 define('CF7SA_URL',  plugin_dir_url(__FILE__));
 
@@ -22,4 +24,5 @@ add_action('admin_menu', ['CF7SA\Admin\Menu', 'register']);
 add_action('admin_enqueue_scripts', ['CF7SA\Admin\Menu', 'enqueue_assets']);
 
 // REST API router
-add_action('rest_api_init', ['CF7SA\Rest\Router', 'init']);
+add_action('rest_api_init', ['CF7SA\Route\Router', 'init']);
+

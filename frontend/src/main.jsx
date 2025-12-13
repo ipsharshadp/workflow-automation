@@ -7,8 +7,6 @@ import './styles.css'
 createRoot(document.getElementById('cf7sa-root')).render(<App />)
 
 
-
-
 // import "../react-wp-globals.js";
 
 // import App from "./App";

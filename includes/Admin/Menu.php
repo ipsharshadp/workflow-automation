@@ -30,17 +30,27 @@ class Menu {
         // --------------------
        if (defined('CF7SA_DEV') && CF7SA_DEV) {
 
-            wp_enqueue_script(
-                'cf7sa-vite-client',
-                'http://127.0.0.1:5173/@vite/client',
-                [],
-                null,
-                true
-            );
+            // wp_enqueue_script(
+            //     'cf7sa-vite-client',
+            //     'http://127.0.0.1:5173/@vite/client',
+            //     [],
+            //     null,
+            //     true
+            // );
 
-            add_action('admin_print_footer_scripts', function () {
+            // add_action('admin_print_footer_scripts', function () {
+            //     echo '<script type="module" src="http://127.0.0.1:5173/src/main.jsx"></script>';
+            // });
+
+                add_action('admin_head', function () {
+                    echo '<script type="module" src="http://127.0.0.1:5173/@vite/client"></script>';
+                });
+
+           add_action('admin_print_footer_scripts', function () {
                 echo '<script type="module" src="http://127.0.0.1:5173/src/main.jsx"></script>';
-            });
+            }, 100);
+
+     
 
             return;
         }

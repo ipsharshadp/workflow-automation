@@ -1,35 +1,15 @@
-<?php 
+<?php
+namespace CF7SA;
 
-class CF7SA_Activator {
+use CF7SA\Database\MigrationRunner;
+
+class Activator {
+
     public static function activate() {
-        global $wpdb;
+        // Run all pending migrations
+        MigrationRunner::run();
 
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-
-        $charset = $wpdb->get_charset_collate();
-
-        $workflow_table = $wpdb->prefix . 'cf7sa_workflows';
-        $log_table = $wpdb->prefix . 'cf7sa_logs';
-
-        $sql1 = "CREATE TABLE $workflow_table (
-            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255),
-            form_id BIGINT UNSIGNED,
-            workflow_json LONGTEXT,
-            active TINYINT DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) $charset;";
-
-        $sql2 = "CREATE TABLE $log_table (
-            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            workflow_id BIGINT UNSIGNED,
-            submission_id BIGINT UNSIGNED,
-            status VARCHAR(20),
-            data LONGTEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) $charset;";
-
-        dbDelta($sql1);
-        dbDelta($sql2);
+        // Update plugin version
+        update_option('cf7sa_plugin_version', CF7SA_VERSION);
     }
 }

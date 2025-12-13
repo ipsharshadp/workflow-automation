@@ -178,7 +178,15 @@ export default function App() {
       const { id, data } = e.detail;
       setNodeData(data);
       setNodeId(id);
-      setShowAppConfigModal(true);
+      console.log("onConfigNodeSettings", id, data);
+      const appType = data.meta?.tool;
+      switch (appType) {
+        case "http_request":
+          setShowAppConfigModal(true);
+          break;
+        default:
+          break;
+      }
       // const store = useFlowsStore.getState();
       // store.updateToolNodeSettings(id, data);
     };
