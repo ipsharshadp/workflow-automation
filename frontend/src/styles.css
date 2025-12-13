@@ -352,3 +352,14 @@
   border-radius: 6px;
   cursor: grab;
 }
+
+html,
+body,
+#root,
+#cf7sa-root {
+  height: 100%;
+}
+
+.react-flow {
+  height: 80vh !important;
+}
