@@ -12,35 +12,19 @@ export default function PillNode({ id, data }) {
     const meta = data?.meta || {};
     const isFirstNode = meta.isFirstNode || false;
 
-
-
-    // Subscribe ONLY to hasChild (this triggers correct re-render after delete or add)
     const hasChild = useFlowsStore((state) => {
         const f = state.getCurrentFlow();
         if (!f?.elements) return false;
         return f.elements.some((el) => el.source === id);
     });
 
-    console.log("isFirstNode", isFirstNode)
-    console.log("data", data)
-    console.log("hasChild", hasChild)
+
     if (isFirstNode && data.label === "Select an app" && !hasChild) {
         window._addingNewNode = true;
     }
 
-
     const showNext = !hasChild;
-
-    // Show settings if app/tool selected, else show +
     const hasAction = !!(meta.app || meta.tool || meta.appName || meta.kind);
-
-    const openPicker = () => {
-        window.dispatchEvent(
-            new CustomEvent("wpaf:open-action-picker", {
-                detail: { action: "open-app-picker", nodeId: id },
-            })
-        );
-    };
 
     const addAfter = () => {
         window.dispatchEvent(
@@ -58,6 +42,21 @@ export default function PillNode({ id, data }) {
         );
     };
 
+    const configNodeSettings = () => {
+        window.dispatchEvent(
+            new CustomEvent("wpaf:config-node-settings", {
+                detail: { id, data },
+            })
+        );
+    };
+
+    const openPicker = () => {
+        window.dispatchEvent(
+            new CustomEvent("wpaf:open-action-picker", {
+                detail: { action: "open-app-picker", nodeId: id },
+            })
+        );
+    };
 
     return (
         <div
@@ -73,6 +72,12 @@ export default function PillNode({ id, data }) {
                     </div>
                 )}
 
+                {!isFirstNode && data.label !== "Select an app" && hasAction && (
+                    <div className="pill-left" onClick={configNodeSettings}>
+                        <FiSettings size={20} />
+                    </div>
+                )}
+
 
                 {/* LABEL */}
                 <div className="pill-text">{data?.label || "Start"}</div>
@@ -84,7 +89,7 @@ export default function PillNode({ id, data }) {
                                 ⋮
                             </Dropdown.Toggle>
                             <Dropdown.Menu>
-                                <Dropdown.Item onClick={openPicker}>Edit</Dropdown.Item>
+                                <Dropdown.Item onClick={configNodeSettings}>Edit</Dropdown.Item>
                                 <Dropdown.Item onClick={deleteNode} className="text-danger">
                                     Delete
                                 </Dropdown.Item>

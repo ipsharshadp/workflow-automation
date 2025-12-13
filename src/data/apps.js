@@ -3,6 +3,7 @@ import { FaWpforms } from "react-icons/fa";
 import { SiMailchimp } from "react-icons/si";
 import { MdOutlineMail } from "react-icons/md";
 import { AiOutlineLink } from "react-icons/ai";
+import { FaGlobe } from 'react-icons/fa';
 import {
     MdEmail,
     MdSms,
@@ -37,6 +38,12 @@ const apps = [
         name: "Webhook",
         icon: TbWebhook,
         type: "app"
+    },
+    {
+        id: "http_request",
+        name: "Make A Request",
+        icon: FaGlobe,
+        type: "app  "
     },
 
 ];

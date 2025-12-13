@@ -8,6 +8,8 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
 import ActionPickerModal from './components/modal/ActionPickerModal';
+import MakeRequestModal from './components/modal/MakeRequestModal';
+
 
 
 
@@ -15,6 +17,9 @@ export default function App() {
   const init = useFlowsStore(s => s.init)
   const [ready, setReady] = useState(false);
   const [show, setShow] = useState(false);
+  const [showAppConfigModal, setShowAppConfigModal] = useState(false);
+  const [nodeData, setNodeData] = useState(null);
+
   const [nodeId, setNodeId] = useState(null);
   const deleteFlow = useFlowsStore(s => s.deleteFlow)
 
@@ -168,6 +173,19 @@ export default function App() {
     return () => window.removeEventListener("wpaf:drop-on-node", onDropOnNode);
   }, []);
 
+  useEffect(() => {
+    const onConfigNodeSettings = (e) => {
+      const { id, data } = e.detail;
+      setNodeData(data);
+      setNodeId(id);
+      setShowAppConfigModal(true);
+      // const store = useFlowsStore.getState();
+      // store.updateToolNodeSettings(id, data);
+    };
+
+    window.addEventListener("wpaf:config-node-settings", onConfigNodeSettings);
+    return () => window.removeEventListener("wpaf:config-node-settings", onConfigNodeSettings);
+  }, []);
 
 
   if (!ready) return <div>Loading…</div>;
@@ -207,7 +225,7 @@ export default function App() {
         onHide={() => setShow(false)}
         nodeId={nodeId}
       />
-
+      <MakeRequestModal show={showAppConfigModal} onClose={() => setShowAppConfigModal(false)} nodeId={nodeId} nodeData={nodeData} />
     </Container>
   )
 }
