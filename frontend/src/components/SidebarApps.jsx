@@ -1,10 +1,15 @@
 import React from 'react';
-import { Container, Row, Col, ListGroup, Nav, Button } from 'react-bootstrap';
+import { Container, Row, Col, ListGroup, Nav, Button, Form, InputGroup } from 'react-bootstrap';
 import apps from "../data/apps";
 import tools from "../data/tools";
-
+import useFlowsStore from "../store/useFlowsStore";
 
 const Sidebar = () => {
+
+  const store = useFlowsStore.getState();
+  const currentFlow = store.getCurrentFlow();
+  const [flowName, setFlowName] = React.useState(currentFlow?.title || "");
+
   const onDragStartApp = (e, app) => {
     // ensure both a custom mime-type and fallback text are set
     e.dataTransfer.setData('application/x-app', JSON.stringify(app));
@@ -17,9 +22,22 @@ const Sidebar = () => {
     e.dataTransfer.setData('text/plain', tool.id || tool.name || 'tool');
     e.dataTransfer.effectAllowed = 'copy';
   };
-
+  const updateFlowTitle = (title) => {
+    store.updateFlowTitle(currentFlow.id, title);
+  };
   return (
     <div className='p-3'>
+      <Form.Group className="mb-3">
+        <Form.Control
+          className='border-0'
+          type="text"
+          value={flowName}
+          onChange={(e) => {
+            setFlowName(e.target.value);
+            updateFlowTitle(e.target.value);
+          }}
+        />
+      </Form.Group>
       <h5 className="text-primary">Actions</h5>
       <ListGroup >
         {apps.map(app => (

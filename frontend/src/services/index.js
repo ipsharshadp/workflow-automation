@@ -9,6 +9,9 @@ const apiData = {
     webhookList: async () => {
         return await api.get("webhooks/list");
     },
+    getContactFormList: async () => {
+        return await api.get("contact-form-7");
+    },
 }
 
 export default apiData;

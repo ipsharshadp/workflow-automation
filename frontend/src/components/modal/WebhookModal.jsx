@@ -158,7 +158,6 @@ export default function WebhookModal({ show, onClose, nodeId, nodeData }) {
                 <Button variant="dark" onClick={startListening} disabled={listening}>
                     {listening ? "Listening..." : "Listen"}
                 </Button>
-                <Button variant="dark">Test Run</Button>
                 <Button variant="outline-secondary" onClick={onClose}>
                     Close
                 </Button>

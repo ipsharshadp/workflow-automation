@@ -45,6 +45,12 @@ const apps = [
         icon: FaGlobe,
         type: "app  "
     },
+    {
+        id: "contact_form_7",
+        name: "Contact Form 7",
+        icon: FaWpforms,
+        type: "app"
+    }
 
 ];
 

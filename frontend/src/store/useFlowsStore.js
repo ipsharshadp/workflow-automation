@@ -109,6 +109,16 @@ const useFlowsStore = create((set, get) => ({
       return { flows, currentFlowId: f.id };
     });
   },
+  updateFlowTitle: (id, title) => {
+    set((state) => {
+      const flows = state.flows.map((f) => {
+        if (f.id !== id) return f;
+        return { ...f, title };
+      });
+      saveAll(flows);
+      return { flows };
+    });
+  },
 
   /* -------------------- DELETE FLOW -------------------- */
   deleteFlow: (id) => {
