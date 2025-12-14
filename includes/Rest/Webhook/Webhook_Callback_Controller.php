@@ -16,21 +16,22 @@ class Webhook_Callback_Controller {
 
         register_rest_route("cf7sa/v1/webhooks", "/listen/(?P<uuid>[a-zA-Z0-9\-]+)", [
             "methods"  => "GET",
-            "callback" => function( WP_REST_Request $req ) {
+            "callback" => [$this, "webhook_listener"],
 
-                $uuid = $req->get_param("uuid");
-
-                $payload = get_option("cf7sa_webhook_payload_" . $uuid);
-
-                return [
-                    "success" => true,
-                    "payload" => $payload ? json_decode($payload, true) : null
-                ];
-            }
         ]);
 
     }
 
+    public function webhook_listener($request ) {
+        $uuid = $request->get_param("uuid");
+
+        $payload = get_option("cf7sa_webhook_payload_" . $uuid);
+
+        return [
+            "success" => true,
+            "payload" => $payload ? json_decode($payload, true) : null
+        ];
+    }
     public function handle_callback($request) {
 
         $uuid = sanitize_text_field($request['uuid']);
@@ -45,21 +46,24 @@ class Webhook_Callback_Controller {
         }
 
         // If secret exists, require header
-        if (!empty($webhook->secret)) {
+        // if (!empty($webhook->secret)) {
 
-            $provided = $request->get_header("x-webhook-secret");
+        //     $provided = $request->get_header("x-webhook-secret");
 
-            if ($provided !== $webhook->secret) {
-                return new \WP_REST_Response([
-                    "success" => false,
-                    "message" => "Unauthorized webhook access"
-                ], 401);
-            }
-        }
+        //     if ($provided !== $webhook->secret) {
+        //         return new \WP_REST_Response([
+        //             "success" => false,
+        //             "message" => "Unauthorized webhook access"
+        //         ], 401);
+        //     }
+        // }
 
         // Log payload
         WebhookLog::log($uuid, $request->get_params());
-
+    update_option(
+        "cf7sa_webhook_payload_" . $uuid,
+        json_encode($request->get_params())
+    );
         // Trigger Workflow (pseudo)
         do_action("cf7sa_trigger_workflow", [
             "flow_id" => $webhook->flow_id,
@@ -88,7 +92,7 @@ class Webhook_Callback_Controller {
         }
 
         // Save the captured payload temporarily
-        update_option("cf7sa_webhook_payload_" . $uuid, json_encode($body));
+          update_option("cf7sa_webhook_payload_" . $uuid, json_encode($body));
 
         return new WP_REST_Response([
             "success" => true,

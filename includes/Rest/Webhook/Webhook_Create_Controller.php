@@ -14,8 +14,23 @@ class Webhook_Create_Controller {
             //     return current_user_can("manage_options"); // Admin only OR change
             // }
         ]);
+        register_rest_route("cf7sa/v1", "/webhooks/list/", [
+            "methods"  => "GET",
+            "callback" => [$this, "webhook_list"],
+            // "permission_callback" => function () {
+            //     return current_user_can("manage_options"); // Admin only OR change
+            // }
+        ]);
     }
 
+    public function webhook_list($request) {
+        $webhooks = Webhook::getAll();
+        return new \WP_REST_Response([
+            "success" => true,
+            "message" => "Webhooks list",
+            "data" => $webhooks,
+        ], 200);
+    }
     public function create_webhook($request) {
        // echo "<pre>";print_r($request);die;
         $flow_id = ($request['flow_id']);
@@ -38,11 +53,12 @@ class Webhook_Create_Controller {
 
         $url = home_url("/wp-json/cf7sa/v1/webhooks/callback/$uuid");
 
-        return [
+        return new \WP_REST_Response([
             "success" => true,
             "uuid" => $uuid,
             "secret" => $secret,
-            "webhook_url" => $url
-        ];
+            "webhook_url" => $url,
+            "message" => "Webhook created successfully",
+        ], 200);
     }
 }

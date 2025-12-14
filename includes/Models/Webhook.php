@@ -26,4 +26,11 @@ class Webhook {
             )
         );
     }
+    public static function getAll() {
+        global $wpdb;
+
+        return $wpdb->get_results(
+            "SELECT * FROM {$wpdb->prefix}cf7sa_webhooks"
+        );
+    }
 }

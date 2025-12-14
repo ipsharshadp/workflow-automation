@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Modal,
     Button,
@@ -18,9 +18,23 @@ export default function WebhookModal({ show, onClose, nodeId, nodeData }) {
     const [requestUrl, setRequestUrl] = useState("");
     const [responseBody, setResponseBody] = useState(null);
     const [copied, setCopied] = useState(false);
+    const [listening, setListening] = useState(false);
+    const [capturedPayload, setCapturedPayload] = useState(null);
+    const [uuid, setUuid] = useState(null);
+    const [webhookList, setWebhookList] = useState([]);
     const store = useFlowsStore.getState();
     const currentFlow = store.getCurrentFlow();
 
+    useEffect(() => {
+        initWebhookList();
+    }, []);
+    const initWebhookList = async () => {
+        const response = await apiService.webhookList();
+        console.log(response.data);
+        if (response.success) {
+            setWebhookList(response.data);
+        }
+    }
     const generateWebhookUrl = async () => {
         console.log("currentFlow", currentFlow);
         const response = await apiService.generateWebhookUrl({
@@ -28,11 +42,16 @@ export default function WebhookModal({ show, onClose, nodeId, nodeData }) {
             node_id: nodeId
         })
         if (response.success) {
-            setRequestUrl(response.webhook_url);
+            if (response.webhook_url) {
+                setRequestUrl(response.webhook_url);
+            }
             setResponseBody(response);
+            if (response.uuid) {
+                setUuid(response.uuid);
+            }
         }
-        c
-        onsole.log(response);
+
+        console.log(response);
     }
 
     const handleCopy = () => {
@@ -43,6 +62,27 @@ export default function WebhookModal({ show, onClose, nodeId, nodeData }) {
         }
     };
 
+    const startListening = () => {
+        setListening(true);
+        setCapturedPayload(null);
+
+        const interval = setInterval(async () => {
+            const res = await apiService.listenWebhook(uuid);  // uuid returned from create API
+
+            if (res?.payload) {
+                setCapturedPayload(res.payload);
+                clearInterval(interval);
+                setListening(false);
+            }
+        }, 1500);
+
+        // Stop polling when modal closes
+        return () => clearInterval(interval);
+    };
+    const onChangeWebhook = (e) => {
+        setUuid(e.target.value);
+        setRequestUrl(`http://wordpress-demo.test/wp-json/cf7sa/v1/webhooks/callback/${e.target.value}`);
+    }
     return (
         <Modal show={show} onHide={onClose} size="lg" centered>
             <Modal.Header closeButton>
@@ -56,8 +96,13 @@ export default function WebhookModal({ show, onClose, nodeId, nodeData }) {
                 <Form.Group className="mb-3">
                     <Form.Label>Connection</Form.Label>
                     <InputGroup>
-                        <Form.Select disabled>
-                            <option>Choose a connection</option>
+                        <Form.Select disabled={webhookList && webhookList.length < 0} onChange={onChangeWebhook}>
+                            {webhookList && webhookList.length < 0 && <option>Choose a connection</option>}
+                            {webhookList && webhookList.map((webhook) => (
+                                <option key={webhook.uuid} value={webhook.uuid}>
+                                    {webhook.uuid}
+                                </option>
+                            ))}
                         </Form.Select>
                         <Button variant="outline-primary" onClick={generateWebhookUrl}>Add Webhook</Button>
                     </InputGroup>
@@ -87,6 +132,17 @@ export default function WebhookModal({ show, onClose, nodeId, nodeData }) {
                         </OverlayTrigger>
                     </InputGroup>
                 </Form.Group>
+
+                {/* Captured Payload */}
+                <Form.Group className="mb-3">
+                    <Form.Label>Captured Payload</Form.Label>
+                    <div className="code-box">
+                        {capturedPayload
+                            ? <JsonView src={capturedPayload} />
+                            : "No payload captured yet"}
+                    </div>
+                </Form.Group>
+
                 {/* Response Body */}
                 <Form.Group className="mb-3">
                     <Form.Label>Response Body</Form.Label>
@@ -99,6 +155,9 @@ export default function WebhookModal({ show, onClose, nodeId, nodeData }) {
                 </Form.Group>
             </Modal.Body>
             <Modal.Footer>
+                <Button variant="dark" onClick={startListening} disabled={listening}>
+                    {listening ? "Listening..." : "Listen"}
+                </Button>
                 <Button variant="dark">Test Run</Button>
                 <Button variant="outline-secondary" onClick={onClose}>
                     Close
