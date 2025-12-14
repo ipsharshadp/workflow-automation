@@ -1,6 +1,7 @@
 // src/store/useFlowsStore.js
 import { create } from "zustand";
 import { nanoid } from "nanoid";
+import apiData from "../services";
 
 const LS_KEY = "wpaf_flows_v1";
 
@@ -52,10 +53,12 @@ function loadAll() {
 function saveAll(flows) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(flows));
+    saveFlowToServer();
   } catch (e) {
     console.error("saveAll error", e);
   }
 }
+
 
 /* -------------------- STORE -------------------- */
 
@@ -909,4 +912,15 @@ const useFlowsStore = create((set, get) => ({
 
 }));
 
+async function saveFlowToServer() {
+  const store = useFlowsStore.getState();
+  const currentFlow = store.getCurrentFlow()
+  console.log("currentFlowId", currentFlow)
+  const reqData = {
+    flow_id: currentFlow.id,
+    workflow_json: JSON.stringify(currentFlow.elements),
+    name: currentFlow.title
+  }
+  //apiData.saveWorkflow(flow);
+}
 export default useFlowsStore;

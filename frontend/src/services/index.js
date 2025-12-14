@@ -15,6 +15,9 @@ const apiData = {
     listenContactForm: async (uuid) => {
         return await api.get(`contact-form-7/listen/${uuid}`);
     },
+    saveWorkflow: async (data) => {
+        return await api.post("workflow/save", data);
+    },
 }
 
 export default apiData;
