@@ -13,6 +13,22 @@ class Webhook_Callback_Controller {
             "callback" => [$this, "handle_callback"],
             "permission_callback" => "__return_true" // No-auth webhook
         ]);
+
+        register_rest_route("cf7sa/v1/webhooks", "/listen/(?P<uuid>[a-zA-Z0-9\-]+)", [
+            "methods"  => "GET",
+            "callback" => function( WP_REST_Request $req ) {
+
+                $uuid = $req->get_param("uuid");
+
+                $payload = get_option("cf7sa_webhook_payload_" . $uuid);
+
+                return [
+                    "success" => true,
+                    "payload" => $payload ? json_decode($payload, true) : null
+                ];
+            }
+        ]);
+
     }
 
     public function handle_callback($request) {
@@ -58,4 +74,27 @@ class Webhook_Callback_Controller {
             "node_id" => $webhook->node_id
         ];
     }
+
+    public function callback_handler( WP_REST_Request $request ) {
+
+        $uuid = $request->get_param('uuid');
+        $body = $request->get_json_params();   // The actual webhook payload
+
+        if (!$uuid) {
+            return new WP_REST_Response([
+                "success" => false,
+                "message" => "Missing webhook UUID"
+            ], 400);
+        }
+
+        // Save the captured payload temporarily
+        update_option("cf7sa_webhook_payload_" . $uuid, json_encode($body));
+
+        return new WP_REST_Response([
+            "success" => true,
+            "received" => $body,
+            "message" => "Webhook captured"
+        ], 200);
+    }
+
 }

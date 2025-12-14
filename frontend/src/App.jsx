@@ -9,15 +9,15 @@ import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
 import ActionPickerModal from './components/modal/ActionPickerModal';
 import MakeRequestModal from './components/modal/MakeRequestModal';
-
-
-
+import WebhookModal from './components/modal/WebhookModal';
+import { ToastContainer, toast } from "react-toastify";
 
 export default function App() {
   const init = useFlowsStore(s => s.init)
   const [ready, setReady] = useState(false);
   const [show, setShow] = useState(false);
   const [showAppConfigModal, setShowAppConfigModal] = useState(false);
+  const [showWebhookModal, setShowWebhookModal] = useState(false);
   const [nodeData, setNodeData] = useState(null);
 
   const [nodeId, setNodeId] = useState(null);
@@ -26,6 +26,7 @@ export default function App() {
   useEffect(() => {
     init();              // Load flows
     setReady(true);      // Ensure children mount AFTER init
+    console.log("App.jsx ready",);
   }, []);
   useEffect(() => {
     const openModal = (e) => {
@@ -184,6 +185,9 @@ export default function App() {
         case "http_request":
           setShowAppConfigModal(true);
           break;
+        case "webhook":
+          setShowWebhookModal(true);
+          break;
         default:
           break;
       }
@@ -199,41 +203,45 @@ export default function App() {
   if (!ready) return <div>Loading…</div>;
 
   return (
-    <Container fluid>
-      <Row>
-        <Col xs={3} className='p-0'>
-          <Row>
-            <Col xs={12}>
-              {/* <FlowList /> */}
-              <SidebarApps />
-            </Col>
-          </Row>
+    <>
+      <Container fluid>
+        <Row>
+          <Col xs={3} className='p-0'>
+            <Row>
+              <Col xs={12}>
+                {/* <FlowList /> */}
+                <SidebarApps />
+              </Col>
+            </Row>
 
-        </Col>
+          </Col>
 
-        <Col xs={9}>
-          <Row>
-            <Col xs={12} className='mt-5'>
-              <Button className='float-start' variant="outline-primary" onClick={() => useFlowsStore.getState().createFlow()}>+ New Flow</Button>
-              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().cloneFlow()}>Clone Flow</Button>
-              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().exportFlow()}>Export</Button>
-              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().importFlowFile()}>Import</Button>
-              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().saveCurrentFlow()}>Save</Button>
-              <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().runCurrentFlow()}>Test Flow Once</Button>
-            </Col>
-            <Col xs={12}>
-              <CanvasArea />
-            </Col>
-          </Row>
+          <Col xs={9}>
+            <Row>
+              <Col xs={12} className='mt-5'>
+                <Button className='float-start' variant="outline-primary" onClick={() => useFlowsStore.getState().createFlow()}>+ New Flow</Button>
+                <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().cloneFlow()}>Clone Flow</Button>
+                <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().exportFlow()}>Export</Button>
+                <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().importFlowFile()}>Import</Button>
+                <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().saveCurrentFlow()}>Save</Button>
+                <Button className='float-start ms-2' variant="outline-primary" onClick={() => useFlowsStore.getState().runCurrentFlow()}>Test Flow Once</Button>
+              </Col>
+              <Col xs={12}>
+                <CanvasArea />
+              </Col>
+            </Row>
 
-        </Col>
-      </Row>
-      <ActionPickerModal
-        show={show}
-        onHide={() => setShow(false)}
-        nodeId={nodeId}
-      />
-      <MakeRequestModal show={showAppConfigModal} onClose={() => setShowAppConfigModal(false)} nodeId={nodeId} nodeData={nodeData} />
-    </Container>
+          </Col>
+        </Row>
+        <ActionPickerModal
+          show={show}
+          onHide={() => setShow(false)}
+          nodeId={nodeId}
+        />
+        <MakeRequestModal show={showAppConfigModal} onClose={() => setShowAppConfigModal(false)} nodeId={nodeId} nodeData={nodeData} />
+        <WebhookModal show={showWebhookModal} onClose={() => setShowWebhookModal(false)} nodeId={nodeId} nodeData={nodeData} />
+      </Container>
+      <ToastContainer />
+    </>
   )
 }

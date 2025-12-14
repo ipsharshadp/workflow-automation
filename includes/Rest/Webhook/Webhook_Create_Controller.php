@@ -10,21 +10,21 @@ class Webhook_Create_Controller {
         register_rest_route("cf7sa/v1", "/webhooks/create", [
             "methods"  => "POST",
             "callback" => [$this, "create_webhook"],
-            "permission_callback" => function () {
-                return current_user_can("manage_options"); // Admin only OR change
-            }
+            // "permission_callback" => function () {
+            //     return current_user_can("manage_options"); // Admin only OR change
+            // }
         ]);
     }
 
     public function create_webhook($request) {
-
-        $flow_id = intval($request['flow_id']);
-        $node_id = intval($request['node_id']);
+       // echo "<pre>";print_r($request);die;
+        $flow_id = ($request['flow_id']);
+        $node_id = ($request['node_id']);
 
         if (!$flow_id || !$node_id) {
             return new \WP_REST_Response([
                 "success" => false,
-                "message" => "flow_id and node_id required"
+                "message" => "flow_id and node_id required",
             ], 400);
         }
 
