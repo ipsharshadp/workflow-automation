@@ -2,15 +2,11 @@
 import { FaWpforms } from "react-icons/fa";
 import { SiMailchimp } from "react-icons/si";
 import { MdOutlineMail } from "react-icons/md";
-import { AiOutlineLink } from "react-icons/ai";
 import { FaGlobe } from 'react-icons/fa';
+import { SiGooglesheets } from 'react-icons/si'
 import {
     MdEmail,
-    MdSms,
-    MdPerson,
     MdNotificationsNone,
-    MdAccessTime,
-    MdCallSplit
 } from "react-icons/md";
 import { TbWebhook } from "react-icons/tb";
 
@@ -49,6 +45,12 @@ const apps = [
         id: "contact_form_7",
         name: "Contact Form 7",
         icon: FaWpforms,
+        type: "app"
+    },
+    {
+        id: "google_sheets",
+        name: "Google Sheets",
+        icon: SiGooglesheets,
         type: "app"
     }
 

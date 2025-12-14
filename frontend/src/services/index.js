@@ -12,6 +12,9 @@ const apiData = {
     getContactFormList: async () => {
         return await api.get("contact-form-7");
     },
+    listenContactForm: async (uuid) => {
+        return await api.get(`contact-form-7/listen/${uuid}`);
+    },
 }
 
 export default apiData;

@@ -17,7 +17,6 @@ class Webhook_Callback_Controller {
         register_rest_route("cf7sa/v1/webhooks", "/listen/(?P<uuid>[a-zA-Z0-9\-]+)", [
             "methods"  => "GET",
             "callback" => [$this, "webhook_listener"],
-
         ]);
 
     }

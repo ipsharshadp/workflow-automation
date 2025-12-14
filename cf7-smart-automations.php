@@ -26,3 +26,7 @@ add_action('admin_enqueue_scripts', ['CF7SA\Admin\Menu', 'enqueue_assets']);
 // REST API router
 add_action('rest_api_init', ['CF7SA\Route\Router', 'init']);
 
+require_once __DIR__ . '/includes/Hooks/CF7_Submission_Listener.php';
+
+new CF7SA\Hooks\CF7_Submission_Listener();
+

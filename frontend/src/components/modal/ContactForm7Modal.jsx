@@ -4,24 +4,19 @@ import {
     Button,
     Form,
     InputGroup,
-    OverlayTrigger,
-    Tooltip
 } from "react-bootstrap";
 import apiService from "../../services";
 import showToast from "../../utils/toastUtil";
-import useFlowsStore from "../../store/useFlowsStore";
 import JsonView from 'react18-json-view'
 import 'react18-json-view/src/style.css'
-import { MdRefresh, MdSync, MdSyncAlt } from 'react-icons/md'
+import { MdSync } from 'react-icons/md'
 
 export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
 
     const [listening, setListening] = useState(false);
     const [capturedPayload, setCapturedPayload] = useState(null);
-    const [uuid, setUuid] = useState(null);
+    const [formId, setFormId] = useState(null);
     const [contactFormList, setContactFormList] = useState([]);
-    const store = useFlowsStore.getState();
-    const currentFlow = store.getCurrentFlow();
 
     useEffect(() => {
         initContactFormList();
@@ -40,7 +35,7 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
         setCapturedPayload(null);
 
         const interval = setInterval(async () => {
-            const res = await apiService.listenWebhook(uuid);  // uuid returned from create API
+            const res = await apiService.listenContactForm(formId);
 
             if (res?.payload) {
                 setCapturedPayload(res.payload);
@@ -52,10 +47,7 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
         // Stop polling when modal closes
         return () => clearInterval(interval);
     };
-    const onChangeWebhook = (e) => {
-        setUuid(e.target.value);
-        setRequestUrl(`http://wordpress-demo.test/wp-json/cf7sa/v1/webhooks/callback/${e.target.value}`);
-    }
+
     const resync = () => {
         initContactFormList();
     }
@@ -69,12 +61,12 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
             </Modal.Header>
 
             <Modal.Body>
-                {/* Connection section */}
+
                 <Form.Group className="mb-3">
                     <Form.Label>Forms</Form.Label>
                     <InputGroup>
-                        <Form.Select>
-                            {contactFormList && contactFormList.length < 0 && <option>Choose a connection</option>}
+                        <Form.Select onChange={(e) => setFormId(e.target.value)}>
+                            <option>Choose a form</option>
                             {contactFormList && contactFormList.map((contactForm) => (
                                 <option key={contactForm.id} value={contactForm.id}>
                                     {contactForm.title}
@@ -85,7 +77,7 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
                     </InputGroup>
                 </Form.Group>
 
-                {/* Captured Payload */}
+
                 <Form.Group className="mb-3">
                     <Form.Label>Captured Payload</Form.Label>
                     <div className="code-box">

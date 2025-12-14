@@ -14,6 +14,11 @@ class CF7_Forms_Controller {
             'callback' => [$this, 'get_forms'],
             "permission_callback" => "__return_true"
         ]);
+
+        register_rest_route("cf7sa/v1/contact-form-7", "/listen/(?P<uuid>[a-zA-Z0-9\-]+)", [
+            "methods"  => "GET",
+            "callback" => [$this, "contact_form_7_webhook_listener"],
+        ]);
     }
 
     public function permissions_check() {
@@ -44,5 +49,15 @@ class CF7_Forms_Controller {
             "data" => $formsList,
             "message" => "Webhook captured"
         ], 200);
+    }
+
+    public function contact_form_7_webhook_listener($request ) {
+        $uuid = $request->get_param("uuid");
+        $payload = get_option("cf7sa_contact_form_7_payload_" . $uuid);
+
+        return [
+            "success" => true,
+            "payload" => $payload ? json_decode($payload, true) : null
+        ];
     }
 }
