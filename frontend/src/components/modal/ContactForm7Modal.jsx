@@ -10,6 +10,7 @@ import showToast from "../../utils/toastUtil";
 import JsonView from 'react18-json-view'
 import 'react18-json-view/src/style.css'
 import { MdSync } from 'react-icons/md'
+import useFlowsStore from "../../store/useFlowsStore";
 
 export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
 
@@ -36,7 +37,6 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
 
         const interval = setInterval(async () => {
             const res = await apiService.listenContactForm(formId);
-
             if (res?.payload) {
                 setCapturedPayload(res.payload);
                 clearInterval(interval);
@@ -50,6 +50,15 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
 
     const resync = () => {
         initContactFormList();
+    }
+
+    const saveNodeData = () => {
+        const data = {
+            formId: formId
+        }
+        const store = useFlowsStore.getState();
+        store.saveNodeData(nodeId, data);
+        // onClose(data);
     }
     return (
         <Modal show={show} onHide={onClose} size="lg" centered>
@@ -92,6 +101,9 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
             <Modal.Footer>
                 <Button variant="dark" onClick={startListening} disabled={listening}>
                     {listening ? "Listening..." : "Listen"}
+                </Button>
+                <Button disabled={!formId} variant="success" onClick={saveNodeData}>
+                    Save
                 </Button>
                 <Button variant="outline-secondary" onClick={onClose}>
                     Close

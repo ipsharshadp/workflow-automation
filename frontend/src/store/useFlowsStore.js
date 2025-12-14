@@ -854,8 +854,6 @@ const useFlowsStore = create((set, get) => ({
     );
   },
 
-
-
   deleteConditionRule: (nodeId, ruleId) => {
     const { flows, currentFlowId } = get();
     const flow = flows.find(f => f.id === currentFlowId);
@@ -889,6 +887,22 @@ const useFlowsStore = create((set, get) => ({
     get().updateCurrentFlowElements(final);
   },
 
+  saveNodeData: (nodeId, data) => {
+    const { flows, currentFlowId } = get();
+    const flow = flows.find(f => f.id === currentFlowId);
+    if (!flow) return;
+
+    // find the node
+    const node = flow.elements.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // Update the node with the new data
+    node.data.meta = { ...node.data.meta, ...data };
+
+    // Update the flow with modified node
+    const final = flow.elements.map(el => (el.id === node.id ? node : el));
+    get().updateCurrentFlowElements(final);
+  },
 
 
 
