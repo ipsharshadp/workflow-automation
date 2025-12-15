@@ -918,9 +918,9 @@ async function saveFlowToServer() {
   console.log("currentFlowId", currentFlow)
   const reqData = {
     flow_id: currentFlow.id,
-    workflow_json: JSON.stringify(currentFlow.elements),
+    workflow_json: currentFlow.elements,
     name: currentFlow.title
   }
-  //apiData.saveWorkflow(flow);
+  await apiData.saveWorkflow(reqData);
 }
 export default useFlowsStore;

@@ -20,7 +20,7 @@ class Workflow_Controller {
         $params = $request->get_params();
 
         $workflow = new Workflow();
-        $workflow->create($params['flow_id'], $params['workflow_json']);
+        $workflow->create($params);
 
         return new WP_REST_Response([
             "success" => true,

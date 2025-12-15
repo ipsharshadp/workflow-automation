@@ -12,19 +12,22 @@ import 'react18-json-view/src/style.css'
 import { MdSync } from 'react-icons/md'
 import useFlowsStore from "../../store/useFlowsStore";
 
+
 export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
 
     const [listening, setListening] = useState(false);
     const [capturedPayload, setCapturedPayload] = useState(null);
-    const [formId, setFormId] = useState(null);
+    const [formId, setFormId] = useState(nodeData?.meta?.formId);
     const [contactFormList, setContactFormList] = useState([]);
 
     useEffect(() => {
-        initContactFormList();
-    }, []);
+        if (show) {
+            initContactFormList();
+        }
+    }, [show]);
     const initContactFormList = async () => {
         const response = await apiService.getContactFormList();
-        console.log(response.data);
+
         if (response.success) {
             setContactFormList(response.data);
         }
@@ -58,7 +61,7 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
         }
         const store = useFlowsStore.getState();
         store.saveNodeData(nodeId, data);
-        // onClose(data);
+        onClose(data);
     }
     return (
         <Modal show={show} onHide={onClose} size="lg" centered>
@@ -74,7 +77,7 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
                 <Form.Group className="mb-3">
                     <Form.Label>Forms</Form.Label>
                     <InputGroup>
-                        <Form.Select onChange={(e) => setFormId(e.target.value)}>
+                        <Form.Select onChange={(e) => setFormId(e.target.value)} value={formId}>
                             <option>Choose a form</option>
                             {contactFormList && contactFormList.map((contactForm) => (
                                 <option key={contactForm.id} value={contactForm.id}>
@@ -88,12 +91,16 @@ export default function ContactForm7Modal({ show, onClose, nodeId, nodeData }) {
 
 
                 <Form.Group className="mb-3">
-                    <Form.Label>Captured Payload</Form.Label>
-                    <div className="code-box">
-                        {capturedPayload
-                            ? <JsonView src={capturedPayload} />
-                            : "No payload captured yet"}
-                    </div>
+                    {capturedPayload && (
+                        <>
+                            <Form.Label>Captured Payload</Form.Label>
+                            <div className="code-box">
+                                {capturedPayload
+                                    ? <JsonView src={capturedPayload} />
+                                    : "No payload captured yet"}
+                            </div>
+                        </>
+                    )}
                 </Form.Group>
 
 

@@ -11,6 +11,7 @@ class create_workflows_table_2025_01_01 {
         $sql = "CREATE TABLE IF NOT EXISTS $table (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255),
+            flow_id VARCHAR(255),
             workflow_json LONGTEXT,
             active TINYINT DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP

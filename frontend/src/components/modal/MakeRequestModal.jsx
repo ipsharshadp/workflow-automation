@@ -1,13 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Button, Form, Row, Col, InputGroup } from "react-bootstrap";
+import useFlowsStore from "../../store/useFlowsStore";
+import { FiTrash2 } from "react-icons/fi";
 
 const httpMethods = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
 export default function MakeRequestModal({ show, onClose, nodeId, nodeData }) {
     const [method, setMethod] = useState("GET");
     const [requestUrl, setRequestUrl] = useState("");
-    const [headers, setHeaders] = useState([{ key: "", value: "" }]);
-    const [queryParams, setQueryParams] = useState([{ key: "", value: "" }]);
+    const [headers, setHeaders] = useState([]);
+    const [queryParams, setQueryParams] = useState([]);
+    const nodeMetaData = nodeData?.meta;
+
+    useEffect(() => {
+        setHeaders([]);
+        setQueryParams([]);
+    }, []);
+    useEffect(() => {
+        if (show && nodeMetaData && nodeMetaData.formData) {
+            setMethod(nodeMetaData.formData.method);
+            setRequestUrl(nodeMetaData.formData.requestUrl);
+            console.log("headers", headers)
+            if (nodeMetaData.formData.headers) {
+                Object.keys(nodeMetaData.formData.headers).forEach(key => {
+                    setHeaders([...headers, { key: key, value: nodeMetaData.formData.headers[key] }]);
+                });
+            }
+            if (nodeMetaData.formData.queryParams) {
+                Object.keys(nodeMetaData.formData.queryParams).forEach(key => {
+                    setQueryParams([...queryParams, { key: key, value: nodeMetaData.formData.queryParams[key] }]);
+                });
+            }
+        }
+    }, [show]);
 
     // Add new row
     const addHeader = () => setHeaders([...headers, { key: "", value: "" }]);
@@ -20,6 +45,29 @@ export default function MakeRequestModal({ show, onClose, nodeId, nodeData }) {
     const removeQueryParam = (index) =>
         setQueryParams(queryParams.filter((_, i) => i !== index));
 
+    const saveNodeData = () => {
+        const headers2 = headers
+            .filter(h => h.key && h.value)
+            .reduce((acc, cur) => {
+                acc[cur.key] = cur.value;
+                return acc;
+            }, {});
+
+
+        let data = {
+            method: method,
+            requestUrl: requestUrl,
+            headers: headers2,
+        }
+        let queryParams2 = queryParams.filter((item) => item.key !== "" && item.value !== "")
+        if (queryParams2.length > 0) {
+            data.queryParams = queryParams2
+        }
+
+        const store = useFlowsStore.getState();
+        store.saveNodeData(nodeId, { formData: data });
+        onClose(data);
+    }
     return (
         <Modal show={show} onHide={onClose} size="lg" centered>
             <Modal.Header closeButton>
@@ -63,6 +111,7 @@ export default function MakeRequestModal({ show, onClose, nodeId, nodeData }) {
                     </Form.Select>
                 </Form.Group>
 
+
                 {/* Headers */}
                 <div className="mb-4">
                     <h6 className="fw-bold">Headers</h6>
@@ -97,7 +146,7 @@ export default function MakeRequestModal({ show, onClose, nodeId, nodeData }) {
                                         variant="outline-danger"
                                         onClick={() => removeHeader(index)}
                                     >
-                                        🗑
+                                        <FiTrash2 />
                                     </Button>
                                 )}
                             </Col>
@@ -143,7 +192,7 @@ export default function MakeRequestModal({ show, onClose, nodeId, nodeData }) {
                                         variant="outline-danger"
                                         onClick={() => removeQueryParam(index)}
                                     >
-                                        🗑
+                                        <FiTrash2 />
                                     </Button>
                                 )}
                             </Col>
@@ -158,6 +207,9 @@ export default function MakeRequestModal({ show, onClose, nodeId, nodeData }) {
 
             <Modal.Footer>
                 <Button variant="dark">Test Run</Button>
+                <Button variant="success" onClick={saveNodeData}>
+                    Save
+                </Button>
                 <Button variant="outline-secondary" onClick={onClose}>
                     Close
                 </Button>
